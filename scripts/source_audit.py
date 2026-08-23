@@ -6,6 +6,7 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 
 TRUE_2D_GAME = "Assets/Kaninbanker/Scripts/KaninbankerGame2D.cs"
+LEGACY_3D_GAME = "Assets/Kaninbanker/Scripts/KaninbankerGame.cs"
 BOOTSTRAP = "Assets/Kaninbanker/Editor/KaninbankerCloudBootstrap.cs"
 PREFLIGHT = "Assets/Kaninbanker/Editor/KaninbankerPreflightValidator.cs"
 
@@ -38,6 +39,11 @@ REQUIRED_MODULES = [
     "com.unity.modules.physics2d",
 ]
 
+FORBIDDEN_MODULES = [
+    "com.unity.modules.physics",
+    "com.unity.modules.particlesystem",
+]
+
 
 def fail(message: str) -> None:
     print(f"ERROR: {message}")
@@ -48,7 +54,9 @@ def check_files() -> None:
     missing = [p for p in REQUIRED if not (ROOT / p).is_file()]
     if missing:
         fail("Missing required files: " + ", ".join(missing))
-    print(f"PASS files: {len(REQUIRED)} TRUE-2D production files present")
+    if (ROOT / LEGACY_3D_GAME).exists():
+        fail("legacy 3D runtime has returned: " + LEGACY_3D_GAME)
+    print(f"PASS files: {len(REQUIRED)} TRUE-2D production files present; legacy 3D runtime absent")
 
 
 def check_manifest() -> None:
@@ -66,10 +74,14 @@ def check_manifest() -> None:
         if module not in deps:
             fail(f"required TRUE-2D Unity module missing: {module}")
 
+    for module in FORBIDDEN_MODULES:
+        if module in deps:
+            fail(f"legacy 3D-oriented Unity module returned: {module}")
+
     if "com.unity.modules.input" in deps:
         fail("forbidden invalid package returned: com.unity.modules.input")
 
-    print("PASS manifest: Android/audio/IMGUI/Physics2D modules present")
+    print("PASS manifest: Physics2D present; legacy Physics/ParticleSystem modules absent")
 
 
 def strip_strings_and_comments(text: str) -> str:
@@ -214,6 +226,8 @@ def check_true_2d_runtime() -> None:
     bootstrap = (ROOT / BOOTSTRAP).read_text(encoding="utf-8")
     if "root.AddComponent<global::Kaninbanker.KaninbankerGame2D>()" not in bootstrap:
         fail("generated Main scene is not rooted in KaninbankerGame2D")
+    if "RegenerateTrue2DScene();" not in bootstrap:
+        fail("cloud bootstrap no longer forcibly regenerates the TRUE-2D Main scene")
 
     print("PASS TRUE 2D: orthographic + sprites + Collider2D + Physics2D; no executable 3D gameplay APIs")
 
@@ -235,7 +249,7 @@ def main() -> int:
     check_portrait_and_editor_2d()
     check_true_2d_runtime()
     check_version()
-    print("SOURCE AUDIT PASS — TRUE 2D")
+    print("SOURCE AUDIT PASS — TRUE 2D ONLY")
     return 0
 
 
