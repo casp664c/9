@@ -35,7 +35,9 @@ namespace Kaninbanker.Editor
             new PackageSource("com.unity.2d.aseprite", "1.1.10"),
             new PackageSource("com.unity.2d.pixel-perfect", "5.0.3"),
             new PackageSource("com.unity.2d.psdimporter", "9.1.1"),
+            new PackageSource("com.unity.2d.sprite", "1.0.0"),
             new PackageSource("com.unity.2d.spriteshape", "10.0.7"),
+            new PackageSource("com.unity.2d.tilemap", "1.0.0"),
             new PackageSource("com.unity.2d.tilemap.extras", "4.1.0")
         };
 
@@ -97,7 +99,7 @@ namespace Kaninbanker.Editor
             }
 
             AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
-            Debug.Log($"[Kaninbanker][UnitySamples] Official Unity 2D sample pass complete. discovered={discovered}, imported={newlyImported}, alreadyImported={alreadyImported}, interactiveSkipped={skippedInteractive}, failures={failures}.");
+            Debug.Log($"[Kaninbanker][UnitySamples] Official Unity 2D sample pass complete. packages={Official2DPackages.Length}, discovered={discovered}, imported={newlyImported}, alreadyImported={alreadyImported}, interactiveSkipped={skippedInteractive}, failures={failures}.");
         }
     }
 }
