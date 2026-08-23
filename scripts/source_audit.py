@@ -4,7 +4,7 @@ import pathlib
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-
+RUNTIME = ROOT / "Assets/Kaninbanker/Scripts"
 TRUE_2D_GAME = "Assets/Kaninbanker/Scripts/KaninbankerGame2D.cs"
 LEGACY_3D_GAME = "Assets/Kaninbanker/Scripts/KaninbankerGame.cs"
 BOOTSTRAP = "Assets/Kaninbanker/Editor/KaninbankerCloudBootstrap.cs"
@@ -30,6 +30,7 @@ REQUIRED = [
     "Packages/manifest.json",
     "ProjectSettings/ProjectVersion.txt",
     "Docs/TRUE_2D_MIGRATION.md",
+    "Docs/AI/UnityProjectContext.md",
 ]
 
 REQUIRED_MODULES = [
@@ -42,6 +43,30 @@ REQUIRED_MODULES = [
 FORBIDDEN_MODULES = [
     "com.unity.modules.physics",
     "com.unity.modules.particlesystem",
+]
+
+FORBIDDEN_RUNTIME_MARKERS = [
+    "GameObject.CreatePrimitive(",
+    "Physics.Raycast(",
+    "Physics.RaycastAll(",
+    "Physics.SphereCast(",
+    "Physics.Overlap",
+    "MeshRenderer",
+    "MeshFilter",
+    "SkinnedMeshRenderer",
+    "new Mesh(",
+    "AddComponent<BoxCollider>",
+    "AddComponent<SphereCollider>",
+    "AddComponent<CapsuleCollider>",
+    "AddComponent<MeshCollider>",
+    "AddComponent<Rigidbody>",
+    "LightType.Directional",
+    "LightType.Point",
+    "LightType.Spot",
+    "ShadowQuality.",
+    "QualitySettings.shadowDistance",
+    "QualitySettings.pixelLightCount",
+    "QualitySettings.lodBias",
 ]
 
 
@@ -200,9 +225,7 @@ def check_portrait_and_editor_2d() -> None:
 
 
 def check_true_2d_runtime() -> None:
-    raw = (ROOT / TRUE_2D_GAME).read_text(encoding="utf-8")
-    code = strip_strings_and_comments(raw)
-
+    game = (ROOT / TRUE_2D_GAME).read_text(encoding="utf-8")
     required = [
         "gameplayCamera.orthographic = true",
         "SpriteRenderer",
@@ -210,18 +233,15 @@ def check_true_2d_runtime() -> None:
         "Physics2D.OverlapPoint",
     ]
     for marker in required:
-        if marker not in raw:
+        if marker not in game:
             fail(f"TRUE-2D runtime marker missing: {marker}")
 
-    forbidden_code = [
-        "GameObject.CreatePrimitive(",
-        "Physics.Raycast(",
-        "LightType.Directional",
-        "LightType.Point",
-    ]
-    for marker in forbidden_code:
-        if marker in code:
-            fail(f"3D gameplay API leaked into KaninbankerGame2D.cs: {marker}")
+    runtime_files = sorted(RUNTIME.rglob("*.cs"))
+    for path in runtime_files:
+        code = strip_strings_and_comments(path.read_text(encoding="utf-8"))
+        for marker in FORBIDDEN_RUNTIME_MARKERS:
+            if marker in code:
+                fail(f"3D-only runtime API found in {path.relative_to(ROOT)}: {marker}")
 
     bootstrap = (ROOT / BOOTSTRAP).read_text(encoding="utf-8")
     if "root.AddComponent<global::Kaninbanker.KaninbankerGame2D>()" not in bootstrap:
@@ -229,27 +249,39 @@ def check_true_2d_runtime() -> None:
     if "RegenerateTrue2DScene();" not in bootstrap:
         fail("cloud bootstrap no longer forcibly regenerates the TRUE-2D Main scene")
 
-    print("PASS TRUE 2D: orthographic + sprites + Collider2D + Physics2D; no executable 3D gameplay APIs")
+    print(f"PASS TRUE 2D: {len(runtime_files)} runtime C# files scanned; no forbidden 3D APIs")
 
 
 def check_version() -> None:
     bootstrap = (ROOT / BOOTSTRAP).read_text(encoding="utf-8")
-    if 'PlayerSettings.bundleVersion = "0.9.0"' not in bootstrap:
-        fail("expected Android bundleVersion 0.9.0 not found")
-    if "PlayerSettings.Android.bundleVersionCode = 9" not in bootstrap:
-        fail("expected Android versionCode 9 not found")
-    print("PASS version: 0.9.0 / versionCode 9")
+    if 'PlayerSettings.bundleVersion = "0.10.0"' not in bootstrap:
+        fail("expected Android bundleVersion 0.10.0 not found")
+    if "PlayerSettings.Android.bundleVersionCode = 10" not in bootstrap:
+        fail("expected Android versionCode 10 not found")
+    print("PASS version: 0.10.0 / versionCode 10")
+
+
+def check_docs() -> None:
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    context = (ROOT / "Docs/AI/UnityProjectContext.md").read_text(encoding="utf-8")
+    for marker in ["0.10.0", "TRUE 2D", "KaninbankerGame2D"]:
+        if marker not in readme:
+            fail(f"README missing current 2D marker: {marker}")
+        if marker not in context:
+            fail(f"UnityProjectContext missing current 2D marker: {marker}")
+    print("PASS docs: README and AI Unity context describe the current TRUE-2D build")
 
 
 def main() -> int:
-    print("Kaninbanker TRUE-2D source audit")
+    print("Kaninbanker FULL TRUE-2D source audit")
     check_files()
     check_manifest()
     check_csharp_structure()
     check_portrait_and_editor_2d()
     check_true_2d_runtime()
     check_version()
-    print("SOURCE AUDIT PASS — TRUE 2D ONLY")
+    check_docs()
+    print("SOURCE AUDIT PASS — FULL APP TRUE 2D ONLY")
     return 0
 
 
