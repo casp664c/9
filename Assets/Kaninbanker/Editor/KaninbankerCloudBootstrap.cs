@@ -33,6 +33,7 @@ namespace Kaninbanker.Editor
         public static void EnsureProjectReady()
         {
             ConfigurePlayerSettings();
+            ConfigureLegacyInput();
             EnsureSceneExists();
             EnsureBuildSettings();
             AssetDatabase.SaveAssets();
@@ -63,6 +64,19 @@ namespace Kaninbanker.Editor
             PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
             PlayerSettings.SetScriptingBackend(NamedBuildTarget.Android, ScriptingImplementation.IL2CPP);
             PlayerSettings.defaultInterfaceOrientation = UIOrientation.LandscapeLeft;
+        }
+
+        private static void ConfigureLegacyInput()
+        {
+            SerializedObject settings = PlayerSettings.GetSerializedObject();
+            settings.Update();
+            SerializedProperty activeInputHandler = settings.FindProperty("activeInputHandler");
+            if (activeInputHandler != null && activeInputHandler.intValue != 0)
+            {
+                activeInputHandler.intValue = 0;
+                settings.ApplyModifiedPropertiesWithoutUndo();
+                Debug.Log("[Kaninbanker] Active Input Handling set to legacy Input Manager for touch/mouse compatibility.");
+            }
         }
 
         private static void EnsureSceneExists()
