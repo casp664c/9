@@ -57,6 +57,7 @@ namespace Kaninbanker.Editor
             ConfigureEditorFor2D();
             ConfigurePlayerSettings();
             ConfigureLegacyInput();
+            KaninbankerUnityOfficialSourceRegistry.ReportOfficialSources();
             KaninbankerOfficialUnitySamples.ImportAllNonInteractiveSamples();
             Kaninbanker2DAssetCatalogBuilder.BuildCatalog();
             RegenerateTrue2DScene();
