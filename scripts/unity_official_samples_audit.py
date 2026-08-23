@@ -42,7 +42,7 @@ manifest = MANIFEST.read_text(encoding="utf-8")
 for marker in [
     "PackageManagerPackageInfo = UnityEditor.PackageManager.PackageInfo",
     "PackageManagerPackageInfo.GetAllRegisteredPackages()",
-    "package.name.StartsWith(\"com.unity.\"",
+    "packageName.StartsWith(\"com.unity.\"",
     "packageName.StartsWith(\"com.unity.2d.\"",
     "Sample.FindByPackage",
     "Sample.ImportOptions.OverridePreviousImports",
