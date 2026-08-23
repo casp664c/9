@@ -57,6 +57,7 @@ namespace Kaninbanker.Editor
                 "Assets/Kaninbanker/Scripts/KaninbankerMayhemPass.cs",
                 "Assets/Kaninbanker/Scripts/KaninbankerEventCircuit.cs",
                 "Assets/Kaninbanker/Scripts/KaninbankerCareerBook.cs",
+                "Assets/Kaninbanker/Scripts/KaninbankerWorldTour.cs",
                 "Assets/Kaninbanker/Scripts/KaninbankerSettingsPanel.cs",
                 "Assets/Kaninbanker/Scripts/KaninbankerTutorial.cs",
                 "Assets/Kaninbanker/Scripts/KaninbankerPerformanceGovernor.cs"
