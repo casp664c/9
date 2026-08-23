@@ -37,7 +37,7 @@ namespace Kaninbanker.Editor
             try
             {
                 EnsureProjectReady();
-                Debug.Log("[Kaninbanker] First-update TRUE-2D cloud-build fallback completed.");
+                Debug.Log("[Kaninbanker] First-update FULL TRUE-2D cloud-build fallback completed.");
             }
             catch (Exception exception)
             {
@@ -78,7 +78,7 @@ namespace Kaninbanker.Editor
                               EditorSettings.defaultBehaviorMode == EditorBehaviorMode.Mode2D;
 
             if (sceneExists && sceneConfigured && settingsOk)
-                Debug.Log("[Kaninbanker] SELF CHECK: PASS - TRUE 2D + Android portrait configuration is ready.");
+                Debug.Log("[Kaninbanker] SELF CHECK: PASS - FULL TRUE 2D + Android portrait configuration is ready.");
             else
                 Debug.LogError($"[Kaninbanker] SELF CHECK: FAIL sceneExists={sceneExists} sceneConfigured={sceneConfigured} settingsOk={settingsOk}");
         }
@@ -92,9 +92,9 @@ namespace Kaninbanker.Editor
         {
             PlayerSettings.companyName = "casp664c";
             PlayerSettings.productName = ProductName;
-            PlayerSettings.bundleVersion = "0.9.0";
+            PlayerSettings.bundleVersion = "0.10.0";
             PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.Android, ApplicationIdentifier);
-            PlayerSettings.Android.bundleVersionCode = 9;
+            PlayerSettings.Android.bundleVersionCode = 10;
             PlayerSettings.Android.minSdkVersion = AndroidSdkVersions.AndroidApiLevel26;
             PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
             PlayerSettings.SetScriptingBackend(NamedBuildTarget.Android, ScriptingImplementation.IL2CPP);
@@ -148,7 +148,7 @@ namespace Kaninbanker.Editor
                 throw new InvalidOperationException("Could not save regenerated Kaninbanker TRUE-2D scene to " + ScenePath);
 
             AssetDatabase.ImportAsset(ScenePath, ImportAssetOptions.ForceSynchronousImport);
-            Debug.Log("[Kaninbanker] Regenerated TRUE 2D cloud-build scene at " + ScenePath + " (stale 3D scene cannot be reused).");
+            Debug.Log("[Kaninbanker] Regenerated FULL TRUE 2D cloud-build scene at " + ScenePath + " (stale 3D scene cannot be reused).");
         }
 
         private static void EnsureBuildSettings()
@@ -158,7 +158,7 @@ namespace Kaninbanker.Editor
                 new EditorBuildSettingsScene(ScenePath, true)
             };
 
-            Debug.Log("[Kaninbanker] Build Settings configured with TRUE 2D scene " + ScenePath);
+            Debug.Log("[Kaninbanker] Build Settings configured with FULL TRUE 2D scene " + ScenePath);
         }
     }
 }
