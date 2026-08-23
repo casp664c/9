@@ -3,8 +3,8 @@ using UnityEngine;
 namespace Kaninbanker
 {
     /// <summary>
-    /// Pure 2D hammer overlay for tap feedback. Built only from SpriteRenderer objects and
-    /// animated on the flat XY plane. It never uses meshes, 3D colliders, lights or 3D physics.
+    /// Pure 2D hammer overlay for tap feedback. Imported hammer sprites from the generated
+    /// asset catalog are preferred; procedural SpriteRenderer geometry remains the fallback.
     /// </summary>
     public sealed class KaninbankerHammer2D : MonoBehaviour
     {
@@ -13,6 +13,7 @@ namespace Kaninbanker
         private Transform hammerRoot;
         private SpriteRenderer handle;
         private SpriteRenderer head;
+        private SpriteRenderer importedHammer;
         private float swingTime;
         private Vector3 targetWorld;
         private bool reducedFx;
@@ -85,7 +86,31 @@ namespace Kaninbanker
             head.color = new Color(1f, 0.72f, 0.10f, 0.98f);
             head.sortingOrder = 91;
 
+            Kaninbanker2DAssetCatalog catalog = Kaninbanker2DAssetCatalog.Load();
+            Sprite sprite = catalog != null ? catalog.PickHammer(71) : null;
+            if (sprite != null)
+            {
+                GameObject importedGo = new GameObject("Hammer2D_ImportedArt");
+                importedGo.transform.SetParent(hammerRoot, false);
+                importedGo.transform.localPosition = Vector3.zero;
+                importedHammer = importedGo.AddComponent<SpriteRenderer>();
+                importedHammer.sprite = sprite;
+                importedHammer.color = Color.white;
+                importedHammer.sortingOrder = 92;
+                ScaleToHeight(importedHammer, 2.0f);
+                handle.enabled = false;
+                head.enabled = false;
+            }
+
             hammerRoot.gameObject.SetActive(false);
+        }
+
+        private static void ScaleToHeight(SpriteRenderer renderer, float height)
+        {
+            if (renderer == null || renderer.sprite == null || renderer.sprite.bounds.size.y <= 0.0001f)
+                return;
+            float scale = height / renderer.sprite.bounds.size.y;
+            renderer.transform.localScale = Vector3.one * scale;
         }
 
         private void ReadTap()
