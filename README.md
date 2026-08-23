@@ -1,26 +1,40 @@
-# Kaninbanker: Portrait Mayhem
+# Kaninbanker: TRUE 2D Portrait Mayhem
 
-Android-first Unity arcade game built for a **phone-only + Unity Cloud Build workflow**.
+Android-first Unity arcade game built for a **phone-only + Unity Build Automation workflow**.
 
-## Current build direction — 0.8.0
+## Current production direction — 0.10.0
 
-The game is intentionally **portrait-only** for tall Android phones instead of the original landscape prototype. Both the Unity build settings and runtime force portrait orientation. HUD and meta panels use `Screen.safeArea` so camera cutouts and system gesture areas do not cover important controls.
+Kaninbanker is now a **TRUE 2D, portrait-only 9:16 game**. This is not a perspective camera pretending to be 2D.
+
+Hard invariants:
+
+- Android portrait only, TikTok/Reels-style tall-phone composition.
+- Unity Editor Default Behavior Mode is forced to `Mode2D` before every cloud build.
+- The generated Main scene always attaches `KaninbankerGame2D`.
+- The gameplay camera is orthographic.
+- World visuals use `SpriteRenderer` on the XY plane.
+- Rabbits and holes use flat 2D sprite composition.
+- Touch targeting uses `CircleCollider2D` + `Physics2D.OverlapPoint`.
+- Feedback and atmosphere use flat sprites instead of meshes, lights or ParticleSystem.
+- Legacy `KaninbankerGame.cs` has been deleted.
+- Unity 3D Physics and ParticleSystem modules are removed from `Packages/manifest.json`.
+- CI and Unity preflight reject 3D runtime APIs across the entire Kaninbanker script folder.
 
 Android package: `com.casp664c.kaninbanker`
 
-Current prototype version: `0.8.0` / Android versionCode `8`
+Current version: `0.10.0` / Android versionCode `10`
 
 ## Core gameplay
 
 - Tall 3x5 arena with 15 rabbit holes
 - Classic, Turbo, Marathon and Boss Rush
-- Normal, fast, gold, armored multi-hit, bomb and boss rabbits
+- Normal, fast, gold, armored, bomb and boss rabbits
 - Dynamic difficulty ramp
 - Combo multiplier
 - Per-round missions
 - Persistent high scores per mode
-- Android vibration on stronger hits
-- Large pooled particle feedback and camera impact
+- Large touch targets designed for one-handed portrait play
+- 2D sprite burst feedback plus orthographic camera shake
 
 ## Powerups
 
@@ -36,87 +50,50 @@ Current prototype version: `0.8.0` / Android versionCode `8`
 - Sukkerland
 - Lava Pit
 
-The runtime builds the arena, lighting, fences, totems, holes and procedural rabbit geometry without requiring imported art for the cloud prototype.
+The current cloud-safe prototype builds all arena/rabbit graphics from runtime-generated **2D sprites**, so it can compile without imported production art. Imported sprite sheets and Sprite Atlases can replace the procedural art later without changing the gameplay architecture.
 
-## Permanent progression
+## Long-term systems
 
-`KaninbankerProfile.cs` stores coins, XP, levels, ranks, trophies, total hits, total rounds and best combo.
+- `KaninbankerProfile.cs`: coins, XP, levels, ranks, trophies and lifetime stats
+- `KaninbankerMayhemPass.cs`: 50-level pass, daily missions, tokens and login streaks
+- `KaninbankerEventCircuit.cs`: rotating offline event circuit, event points, chests and medals
+- `KaninbankerWorldTour.cs`: 60-stage campaign across 12 worlds
+- `KaninbankerCareerBook.cs`: milestones, collection unlocks and records
+- `KaninbankerTutorial.cs`: first-run portrait tutorial
 
-## Mayhem Pass
+All gameplay-facing systems resolve `KaninbankerGame2D`; no legacy 3D game controller is part of the app.
 
-`KaninbankerMayhemPass.cs` adds a 50-level pass, Mayhem XP, tokens, daily missions, login rewards and login streak progression.
+## Audio and music
 
-## Mega Event Circuit
+`KaninbankerAudio.cs` synthesizes game music and SFX at runtime using non-spatial AudioSources (`spatialBlend = 0`).
 
-`KaninbankerEventCircuit.cs` adds an offline live-ops style event that rotates every three UTC days.
+`KaninbankerExternalMusic.cs` and `KaninbankerMusicPanel.cs` open the official YouTube Music experience as a companion flow. The game does not download, extract or proxy YouTube audio.
 
-- eight rotating event themes
-- event points
-- event rounds
-- best event score
-- milestone reward chests
-- medals
-- lifetime event points
-- event streak
+## TRUE-2D performance policy
 
-## World Tour
+`KaninbankerPerformanceGovernor.cs` targets selectable 30/60 FPS without any 3D lighting/shadow/LOD controls. Its quality tiers only change sprite-friendly sampling settings such as antialiasing and anisotropic filtering.
 
-`KaninbankerWorldTour.cs` adds a **60-stage campaign**:
+`KaninbankerSettingsPanel.cs` provides:
 
-- 12 worlds
-- 5 stages per world
-- 1–3 stars per stage
-- escalating score targets
-- persistent stage unlocks
-- persistent total stars
+- 30 FPS
+- 60 FPS
+- Reduced FX
+- sound controls
 
-Worlds:
+The goal is stable frame pacing on Android while preserving readable 2D sprites.
 
-1. Grøn Eng
-2. Mørk Skov
-3. Neon City
-4. Sukkerland
-5. Lava Pit
-6. Frosthuler
-7. Robotfabrik
-8. Piratøen
-9. Spøgelsesbyen
-10. Rummet
-11. Kaosdimensionen
-12. Kejserens Arena
+## 2D art pipeline
 
-## Career Book and collection
+Production art must follow a sprite-first pipeline:
 
-`KaninbankerCareerBook.cs` adds long-term milestones, hit/round/combo/level/event goals, Mayhem Pass goals, streak goals, 24 collection unlock slots and career records.
+1. lock one approved rabbit/hammer/FX seed frame;
+2. create full animation strips rather than generating frames independently;
+3. preserve transparent backgrounds and stable silhouettes;
+4. normalize every strip to consistent frame size and bottom-center anchors;
+5. pack approved production sprites into Sprite Atlases where appropriate;
+6. inspect the animation in-engine on a 9:16 Android device before shipping.
 
-## Tutorial
-
-`KaninbankerTutorial.cs` provides a first-run portrait tutorial explaining tapping/combos, rabbit types, bombs, bosses, powerups and progression. It can be reopened outside active gameplay.
-
-## Audio
-
-`KaninbankerAudio.cs` synthesizes the prototype soundtrack and sound effects at runtime with `AudioClip.Create`.
-
-Current palette includes heavy bonk/hit, combo stinger, miss, rabbit pop, round start, game over, UI click, powerup arpeggio, bomb impact, boss impact, reward fanfare and looping arcade music.
-
-## YouTube Music companion mode
-
-`KaninbankerExternalMusic.cs` and `KaninbankerMusicPanel.cs` open the official YouTube Music experience rather than downloading or extracting YouTube audio. Internal music can be disabled while game SFX remain active.
-
-See `Docs/YOUTUBE_MUSIC.md`.
-
-## Device and comfort settings
-
-`KaninbankerSettingsPanel.cs` adds:
-
-- 30 FPS mode
-- 60 FPS mode
-- reduced visual effects
-- sound toggle
-
-`KaninbankerPerformanceGovernor.cs` watches sustained frame rate and dynamically adjusts shadows, shadow distance, pixel lights, antialiasing, LOD bias and anisotropic filtering.
-
-`KaninbankerFeedback.cs` uses a larger pooled FX system while respecting Reduced FX mode.
+See `Docs/TRUE_2D_MIGRATION.md` and `Docs/2D_ART_DIRECTION.md`.
 
 ## Cloud Build reliability
 
@@ -126,34 +103,52 @@ Recommended Unity Build Automation configuration:
 - Platform: Android
 - Unity version: `6000.0.60f1`
 - Project subfolder: empty
-- Device testing: APK
-- Release later: AAB + release signing
+- Test artifact: APK
+- Store artifact later: AAB + release signing
 
-`KaninbankerCloudBootstrap.cs` automatically locks Android to portrait, disables landscape autorotation, configures package ID, applies version `0.8.0` / versionCode `8`, selects ARM64 + IL2CPP, creates `Assets/Kaninbanker/Scenes/Main.unity` if needed, adds the scene to Build Settings and keeps external audio mixing enabled.
+`KaninbankerCloudBootstrap.cs` performs deterministic cloud setup. Before each build it:
 
-`KaninbankerPreflightValidator.cs` intentionally fails early with readable errors if portrait orientation, the generated build scene, required source systems or Unity modules are missing.
+- sets Unity Default Behavior Mode to 2D;
+- locks Android to portrait;
+- configures package/version/ARM64/IL2CPP;
+- regenerates `Assets/Kaninbanker/Scenes/Main.unity` from scratch;
+- attaches only `KaninbankerGame2D` to the generated scene root;
+- replaces Build Settings with that scene.
 
-Custom build method if required:
+This prevents a cached 3D scene from an older Unity Cloud workspace from being reused.
 
-`Kaninbanker.Editor.KaninbankerBuild.BuildAndroidApk`
+`KaninbankerPreflightValidator.cs` then refuses the build if the project contains legacy 3D gameplay files/modules or forbidden 3D runtime APIs.
 
-## Permanent expansion plan
+## Automated source audit
 
-See `Docs/MEGA_EXPANSION.md` for the roadmap covering 30+ mechanically different rabbit types, multi-phase bosses, larger World Tour mechanics, shop/equipment, expanded powers, 100+ achievements, seasonal content, production art, Addressables/content streaming, performance budgets and device validation.
+GitHub Actions runs `scripts/source_audit.py` on pushes and pull requests to `build/kaninbanker-unity-live`.
+
+The audit checks:
+
+- required TRUE-2D files
+- Physics2D present
+- legacy Physics/ParticleSystem modules absent
+- no old `KaninbankerGame.cs`
+- balanced C# structure
+- Unity 2D mode + portrait lock
+- orthographic/SpriteRenderer/Collider2D/Physics2D markers
+- every runtime C# file for forbidden 3D APIs
+- version `0.10.0` / versionCode `10`
+- documentation consistency
 
 ## Validation rule
 
-A source commit is not device-ready until Unity Build Automation compiles it successfully.
+A commit is not device-ready until a **new Unity Build Automation run** compiles it successfully.
 
 After a large rewrite:
 
-1. Start a **new** Unity build rather than replaying an old revision.
-2. Confirm Unity checked out the current commit.
-3. Require the preflight PASS message.
-4. Require Android build SUCCESS.
+1. Start a new Unity build; do not replay an old build revision.
+2. Confirm the log checked out the newest commit.
+3. Require `PREFLIGHT PASS: FULL APP TRUE 2D ONLY`.
+4. Require Android build `SUCCESS`.
 5. Install the resulting APK on a real portrait Android phone.
-6. Test safe area, touch targets, frame pacing, audio, tutorial, World Tour and a complete round.
+6. Verify flat front-facing 2D visuals, safe area, touch targets, frame pacing, audio, tutorial, World Tour and a complete round.
 
 ## Security
 
-Never commit GitHub Personal Access Tokens, Unity credentials, release keystores or passwords to this repository.
+Never commit GitHub Personal Access Tokens, Unity credentials, release keystores or passwords.
