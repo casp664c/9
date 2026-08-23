@@ -3,9 +3,9 @@ using UnityEngine;
 namespace Kaninbanker
 {
     /// <summary>
-    /// Lightweight Android performance governor that keeps the large portrait arena responsive.
-    /// It watches sustained frame rate and scales expensive quality settings gradually. The player
-    /// can select a 30 or 60 FPS target through KaninbankerSettingsPanel.
+    /// Android performance governor for the TRUE-2D portrait runtime.
+    /// It changes only frame pacing and texture/sprite-friendly quality switches.
+    /// No 3D lights, shadows, LOD, meshes or 3D-renderer assumptions are used.
     /// </summary>
     public sealed class KaninbankerPerformanceGovernor : MonoBehaviour
     {
@@ -23,7 +23,7 @@ namespace Kaninbanker
             if (FindFirstObjectByType<KaninbankerPerformanceGovernor>() != null)
                 return;
 
-            GameObject go = new GameObject("KaninbankerPerformanceGovernor");
+            GameObject go = new GameObject("KaninbankerPerformanceGovernor2D");
             DontDestroyOnLoad(go);
             go.AddComponent<KaninbankerPerformanceGovernor>();
         }
@@ -96,34 +96,23 @@ namespace Kaninbanker
                 return;
 
             qualityTier = tier;
-            switch (tier)
+
+            // TRUE-2D quality policy: preserve sprite clarity and reduce only optional sampling cost.
+            // Runtime-generated Kaninbanker sprites do not depend on 3D lights, shadows or LOD.
+            if (tier == 0)
             {
-                case 0:
-                    QualitySettings.shadows = ShadowQuality.Disable;
-                    QualitySettings.shadowDistance = 0f;
-                    QualitySettings.pixelLightCount = 1;
-                    QualitySettings.antiAliasing = 0;
-                    QualitySettings.lodBias = 0.70f;
-                    QualitySettings.anisotropicFiltering = AnisotropicFiltering.Disable;
-                    break;
-
-                case 1:
-                    QualitySettings.shadows = ShadowQuality.HardOnly;
-                    QualitySettings.shadowDistance = 16f;
-                    QualitySettings.pixelLightCount = 2;
-                    QualitySettings.antiAliasing = 0;
-                    QualitySettings.lodBias = 0.90f;
-                    QualitySettings.anisotropicFiltering = AnisotropicFiltering.Enable;
-                    break;
-
-                default:
-                    QualitySettings.shadows = ShadowQuality.All;
-                    QualitySettings.shadowDistance = 28f;
-                    QualitySettings.pixelLightCount = 3;
-                    QualitySettings.antiAliasing = 2;
-                    QualitySettings.lodBias = 1.15f;
-                    QualitySettings.anisotropicFiltering = AnisotropicFiltering.Enable;
-                    break;
+                QualitySettings.antiAliasing = 0;
+                QualitySettings.anisotropicFiltering = AnisotropicFiltering.Disable;
+            }
+            else if (tier == 1)
+            {
+                QualitySettings.antiAliasing = 0;
+                QualitySettings.anisotropicFiltering = AnisotropicFiltering.Enable;
+            }
+            else
+            {
+                QualitySettings.antiAliasing = 2;
+                QualitySettings.anisotropicFiltering = AnisotropicFiltering.Enable;
             }
         }
     }
