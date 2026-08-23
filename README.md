@@ -24,6 +24,13 @@ Android-first Unity game built for a **phone-only + cloud-build workflow**.
   - UI click sound
   - looping lightweight chiptune-style background music
   - persistent sound on/off toggle
+- YouTube Music companion mode
+  - in-game **MUSIK** panel
+  - open official YouTube Music
+  - search by song, artist or playlist text
+  - automatically disable only Kaninbanker's internal soundtrack while keeping game SFX active
+  - allow compatible external audio to keep playing alongside the game
+  - restore internal music at any time
 - Headless/editor bootstrap that creates the build scene automatically
 - Android package id: `com.casp664c.kaninbanker`
 
@@ -49,6 +56,14 @@ If a custom build method is needed, use:
 ## Audio implementation
 
 `Assets/Kaninbanker/Scripts/KaninbankerAudio.cs` synthesizes the prototype music and effects once at runtime with `AudioClip.Create`. This keeps the first cloud-build prototype self-contained and avoids licensing/import problems while still producing real sound on-device. Imported WAV/OGG assets can replace individual clips later without changing the gameplay rules.
+
+The internal soundtrack and game SFX are separate. This allows the player to use YouTube Music as external background music while still hearing bonks, combo sounds, misses, rabbit pops and UI feedback.
+
+## YouTube Music
+
+`Assets/Kaninbanker/Scripts/KaninbankerExternalMusic.cs` and `KaninbankerMusicPanel.cs` implement a compliant companion flow: the game opens the official YouTube Music service rather than downloading, extracting or secretly background-playing YouTube audio inside Unity. The user starts a track in YouTube Music and returns to Kaninbanker. Unity is configured with `PlayerSettings.muteOtherAudioSources = false` so Android can keep compatible external audio alive alongside game SFX.
+
+See `Docs/YOUTUBE_MUSIC.md` for details.
 
 ## Visual feedback
 
