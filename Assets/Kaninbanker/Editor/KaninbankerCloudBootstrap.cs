@@ -60,6 +60,8 @@ namespace Kaninbanker.Editor
             PlayerSettings.SetApplicationIdentifier(BuildTargetGroup.Android, ApplicationIdentifier);
             PlayerSettings.Android.bundleVersionCode = 1;
             PlayerSettings.Android.minSdkVersion = AndroidSdkVersions.AndroidApiLevel26;
+            PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
+            PlayerSettings.SetScriptingBackend(NamedBuildTarget.Android, ScriptingImplementation.IL2CPP);
             PlayerSettings.defaultInterfaceOrientation = UIOrientation.LandscapeLeft;
         }
 
@@ -73,7 +75,7 @@ namespace Kaninbanker.Editor
             scene.name = "Main";
 
             var root = new GameObject("KaninbankerGame");
-            root.AddComponent<KaninbankerGame>();
+            root.AddComponent<global::Kaninbanker.KaninbankerGame>();
             SceneManager.MoveGameObjectToScene(root, scene);
 
             EditorSceneManager.SaveScene(scene, ScenePath);
