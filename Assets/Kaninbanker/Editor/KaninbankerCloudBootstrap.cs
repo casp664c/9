@@ -57,7 +57,7 @@ namespace Kaninbanker.Editor
             ConfigureEditorFor2D();
             ConfigurePlayerSettings();
             ConfigureLegacyInput();
-            EnsureSceneExists();
+            RegenerateTrue2DScene();
             EnsureBuildSettings();
             AssetDatabase.SaveAssets();
         }
@@ -85,7 +85,6 @@ namespace Kaninbanker.Editor
 
         private static void ConfigureEditorFor2D()
         {
-            // Unity's project-level 2D mode: imported images default to Sprites and new scene defaults are 2D-oriented.
             EditorSettings.defaultBehaviorMode = EditorBehaviorMode.Mode2D;
         }
 
@@ -132,13 +131,12 @@ namespace Kaninbanker.Editor
             }
         }
 
-        private static void EnsureSceneExists()
+        private static void RegenerateTrue2DScene()
         {
-            SceneAsset existing = AssetDatabase.LoadAssetAtPath<SceneAsset>(ScenePath);
-            if (existing != null)
-                return;
-
+            // Main.unity is generated build input, not hand-authored content. Recreate it every time so a
+            // cached/untracked scene from an older 3D cloud workspace can NEVER become the next Android build.
             Directory.CreateDirectory(SceneDirectory);
+
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             scene.name = "Main";
 
@@ -147,18 +145,14 @@ namespace Kaninbanker.Editor
             SceneManager.MoveGameObjectToScene(root, scene);
 
             if (!EditorSceneManager.SaveScene(scene, ScenePath, false))
-                throw new InvalidOperationException("Could not save generated Kaninbanker 2D scene to " + ScenePath);
+                throw new InvalidOperationException("Could not save regenerated Kaninbanker TRUE-2D scene to " + ScenePath);
 
             AssetDatabase.ImportAsset(ScenePath, ImportAssetOptions.ForceSynchronousImport);
-            Debug.Log("[Kaninbanker] Generated TRUE 2D cloud-build scene at " + ScenePath);
+            Debug.Log("[Kaninbanker] Regenerated TRUE 2D cloud-build scene at " + ScenePath + " (stale 3D scene cannot be reused).");
         }
 
         private static void EnsureBuildSettings()
         {
-            EditorBuildSettingsScene[] current = EditorBuildSettings.scenes;
-            if (current != null && current.Length == 1 && current[0].path == ScenePath && current[0].enabled)
-                return;
-
             EditorBuildSettings.scenes = new[]
             {
                 new EditorBuildSettingsScene(ScenePath, true)
