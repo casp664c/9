@@ -16,6 +16,8 @@ namespace Kaninbanker
         private readonly List<RabbitHole> holes = new List<RabbitHole>();
         private Camera gameplayCamera;
         private RabbitHole activeHole;
+        private KaninbankerAudio audioSystem;
+        private KaninbankerFeedback feedbackSystem;
         private float roundTimeLeft;
         private float phaseTimeLeft;
         private float comboTimeLeft;
@@ -38,12 +40,25 @@ namespace Kaninbanker
         private void Awake()
         {
             highScore = PlayerPrefs.GetInt(HighScoreKey, 0);
+            audioSystem = GetComponent<KaninbankerAudio>();
+            if (audioSystem == null)
+                audioSystem = gameObject.AddComponent<KaninbankerAudio>();
+
+            feedbackSystem = GetComponent<KaninbankerFeedback>();
+            if (feedbackSystem == null)
+                feedbackSystem = gameObject.AddComponent<KaninbankerFeedback>();
+
             BuildRuntimeScene();
+            feedbackSystem.Configure(gameplayCamera);
+            audioSystem.StartMusic();
             StartRound();
         }
 
         private void Update()
         {
+            for (int i = 0; i < holes.Count; i++)
+                holes[i].Tick(Time.deltaTime);
+
             if (!running)
                 return;
 
@@ -81,12 +96,15 @@ namespace Kaninbanker
             running = true;
             HideAllRabbits();
             phaseTimeLeft = 0.25f;
+            audioSystem.PlayRoundStart();
         }
 
         private void FinishRound()
         {
             running = false;
             HideActiveRabbit(false);
+            audioSystem.PlayGameOver();
+
             if (score > highScore)
             {
                 highScore = score;
@@ -172,8 +190,12 @@ namespace Kaninbanker
             CreatePart(PrimitiveType.Capsule, "EarRight", rabbit.transform, new Vector3(0.23f, 1.78f, 0f), new Vector3(0.20f, 0.48f, 0.18f), new Color(0.84f, 0.79f, 0.72f));
             CreatePart(PrimitiveType.Sphere, "Nose", rabbit.transform, new Vector3(0f, 1.02f, -0.34f), new Vector3(0.16f, 0.12f, 0.12f), new Color(0.85f, 0.36f, 0.42f));
 
+            // Eyes make the procedural character read better even without imported art assets.
+            CreatePart(PrimitiveType.Sphere, "EyeLeft", rabbit.transform, new Vector3(-0.19f, 1.20f, -0.31f), new Vector3(0.10f, 0.12f, 0.07f), new Color(0.04f, 0.04f, 0.05f));
+            CreatePart(PrimitiveType.Sphere, "EyeRight", rabbit.transform, new Vector3(0.19f, 1.20f, -0.31f), new Vector3(0.10f, 0.12f, 0.07f), new Color(0.04f, 0.04f, 0.05f));
+
             var hole = root.AddComponent<RabbitHole>();
-            hole.RabbitObject = rabbit;
+            hole.Configure(rabbit);
             target.Hole = hole;
             rabbit.SetActive(false);
             return hole;
@@ -212,20 +234,24 @@ namespace Kaninbanker
                 return;
 
             activeHole = holes[Random.Range(0, holes.Count)];
-            activeHole.RabbitObject.SetActive(true);
+            activeHole.Show();
             phaseTimeLeft = RabbitVisibleTime;
+            audioSystem.PlayRabbitPop(Difficulty01);
         }
 
         private void HideActiveRabbit(bool countMiss)
         {
             if (activeHole != null && activeHole.RabbitObject != null)
             {
-                activeHole.RabbitObject.SetActive(false);
+                Vector3 feedbackPosition = activeHole.transform.position;
+                activeHole.Hide();
                 if (countMiss)
                 {
                     misses++;
                     combo = 0;
                     comboTimeLeft = 0f;
+                    audioSystem.PlayMiss();
+                    feedbackSystem.PlayMiss(feedbackPosition);
                 }
             }
 
@@ -237,8 +263,8 @@ namespace Kaninbanker
         {
             foreach (var hole in holes)
             {
-                if (hole != null && hole.RabbitObject != null)
-                    hole.RabbitObject.SetActive(false);
+                if (hole != null)
+                    hole.Hide();
             }
             activeHole = null;
         }
@@ -267,13 +293,16 @@ namespace Kaninbanker
                 return;
 
             var target = hit.collider.GetComponentInParent<RabbitTarget>();
-            if (target == null || activeHole == null || target.Hole != activeHole || !activeHole.RabbitObject.activeSelf)
+            if (target == null || activeHole == null || target.Hole != activeHole || !activeHole.IsVisible)
                 return;
 
             combo = comboTimeLeft > 0f ? combo + 1 : 1;
             comboTimeLeft = ComboWindow;
             score += Mathf.Min(combo, 5);
             hits++;
+
+            audioSystem.PlayHit(combo);
+            feedbackSystem.PlayHit(activeHole.transform.position, combo);
 
 #if UNITY_ANDROID && !UNITY_EDITOR
             Handheld.Vibrate();
@@ -297,25 +326,42 @@ namespace Kaninbanker
 
             GUI.Box(new Rect(left, top, width, lineHeight * 2.6f), GUIContent.none);
             GUI.Label(new Rect(left, top, width, lineHeight), "KANINBANKER", titleStyle);
-            GUI.Label(new Rect(left + margin, top + lineHeight, width * 0.32f, lineHeight), "Score: " + score, hudStyle);
-            GUI.Label(new Rect(left + width * 0.38f, top + lineHeight, width * 0.25f, lineHeight), "Tid: " + Mathf.CeilToInt(roundTimeLeft), hudStyle);
-            GUI.Label(new Rect(left + width * 0.68f, top + lineHeight, width * 0.28f, lineHeight), combo > 1 ? "Combo x" + combo : "", hudStyle);
+            GUI.Label(new Rect(left + margin, top + lineHeight, width * 0.28f, lineHeight), "Score: " + score, hudStyle);
+            GUI.Label(new Rect(left + width * 0.34f, top + lineHeight, width * 0.22f, lineHeight), "Tid: " + Mathf.CeilToInt(roundTimeLeft), hudStyle);
+            GUI.Label(new Rect(left + width * 0.59f, top + lineHeight, width * 0.22f, lineHeight), combo > 1 ? "Combo x" + combo : "", hudStyle);
+
+            Rect soundButton = new Rect(left + width - lineHeight * 1.25f, top + lineHeight * 1.04f, lineHeight * 1.1f, lineHeight * 0.85f);
+            if (GUI.Button(soundButton, audioSystem.IsMuted ? "LYD FRA" : "LYD TIL", smallStyle))
+            {
+                bool wasMuted = audioSystem.IsMuted;
+                if (!wasMuted)
+                    audioSystem.PlayUi();
+                audioSystem.ToggleMute();
+                if (wasMuted)
+                    audioSystem.PlayUi();
+            }
 
             if (!running)
             {
                 float panelWidth = safe.width * 0.62f;
-                float panelHeight = Mathf.Max(160f, safe.height * 0.28f);
+                float panelHeight = Mathf.Max(180f, safe.height * 0.31f);
                 float panelX = safe.x + (safe.width - panelWidth) * 0.5f;
-                float panelY = Screen.height - safe.yMax + safe.height * 0.42f;
+                float panelY = Screen.height - safe.yMax + safe.height * 0.40f;
                 GUI.Box(new Rect(panelX, panelY, panelWidth, panelHeight), GUIContent.none);
                 GUI.Label(new Rect(panelX, panelY + 8f, panelWidth, lineHeight), "Runden er slut", titleStyle);
                 GUI.Label(new Rect(panelX + margin, panelY + lineHeight, panelWidth - margin * 2f, lineHeight), $"Score {score}   Rekord {highScore}", hudStyle);
                 GUI.Label(new Rect(panelX + margin, panelY + lineHeight * 1.65f, panelWidth - margin * 2f, lineHeight), $"Træffere {hits}   Miss {misses}", smallStyle);
 
+                float accuracy = hits + misses > 0 ? hits * 100f / (hits + misses) : 0f;
+                GUI.Label(new Rect(panelX + margin, panelY + lineHeight * 2.12f, panelWidth - margin * 2f, lineHeight), $"Præcision {accuracy:0}%", smallStyle);
+
                 float buttonHeight = Mathf.Max(58f, safe.height * 0.085f);
                 var buttonRect = new Rect(panelX + margin, panelY + panelHeight - buttonHeight - margin, panelWidth - margin * 2f, buttonHeight);
                 if (GUI.Button(buttonRect, "Spil igen", buttonStyle))
+                {
+                    audioSystem.PlayUi();
                     StartRound();
+                }
             }
         }
 
@@ -351,7 +397,47 @@ namespace Kaninbanker
 
     public sealed class RabbitHole : MonoBehaviour
     {
-        public GameObject RabbitObject { get; set; }
+        private Vector3 baseLocalPosition;
+        private float showTime;
+
+        public GameObject RabbitObject { get; private set; }
+        public bool IsVisible => RabbitObject != null && RabbitObject.activeSelf;
+
+        public void Configure(GameObject rabbitObject)
+        {
+            RabbitObject = rabbitObject;
+            baseLocalPosition = RabbitObject != null ? RabbitObject.transform.localPosition : Vector3.zero;
+        }
+
+        public void Show()
+        {
+            if (RabbitObject == null)
+                return;
+
+            showTime = 0f;
+            RabbitObject.transform.localPosition = baseLocalPosition - Vector3.up * 0.25f;
+            RabbitObject.transform.localScale = Vector3.one * 0.30f;
+            RabbitObject.SetActive(true);
+        }
+
+        public void Hide()
+        {
+            if (RabbitObject != null)
+                RabbitObject.SetActive(false);
+        }
+
+        public void Tick(float deltaTime)
+        {
+            if (!IsVisible)
+                return;
+
+            showTime += deltaTime;
+            float t = Mathf.Clamp01(showTime / 0.14f);
+            float overshoot = 1f + Mathf.Sin(t * Mathf.PI) * 0.18f;
+            RabbitObject.transform.localScale = Vector3.one * Mathf.Lerp(0.30f, overshoot, t);
+            RabbitObject.transform.localPosition = baseLocalPosition + Vector3.up * (Mathf.Sin(Time.time * 11f) * 0.025f);
+            RabbitObject.transform.localRotation = Quaternion.Euler(0f, 0f, Mathf.Sin(Time.time * 8f) * 2.5f);
+        }
     }
 
     public sealed class RabbitTarget : MonoBehaviour
