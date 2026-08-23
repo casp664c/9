@@ -5,6 +5,7 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 IMPORTER = ROOT / "Assets/Kaninbanker/Editor/KaninbankerOfficialUnitySamples.cs"
 VALIDATOR = ROOT / "Assets/Kaninbanker/Editor/KaninbankerOfficialUnitySamplesValidator.cs"
+AUDIO_IMPORTER = ROOT / "Assets/Kaninbanker/Editor/Kaninbanker2DAssetImporter.cs"
 SOURCE_REGISTRY = ROOT / "Assets/Kaninbanker/Editor/KaninbankerUnityOfficialSourceRegistry.cs"
 BOOTSTRAP = ROOT / "Assets/Kaninbanker/Editor/KaninbankerCloudBootstrap.cs"
 MANIFEST = ROOT / "Packages/manifest.json"
@@ -27,19 +28,20 @@ def fail(message: str) -> None:
     raise SystemExit(1)
 
 
-for path in [IMPORTER, VALIDATOR, SOURCE_REGISTRY, BOOTSTRAP, MANIFEST, DOCS]:
+for path in [IMPORTER, VALIDATOR, AUDIO_IMPORTER, SOURCE_REGISTRY, BOOTSTRAP, MANIFEST, DOCS]:
     if not path.is_file():
         fail(f"missing official Unity content pipeline file: {path.relative_to(ROOT)}")
 
 importer = IMPORTER.read_text(encoding="utf-8")
 validator = VALIDATOR.read_text(encoding="utf-8")
+audio_importer = AUDIO_IMPORTER.read_text(encoding="utf-8")
 registry = SOURCE_REGISTRY.read_text(encoding="utf-8")
 bootstrap = BOOTSTRAP.read_text(encoding="utf-8")
 manifest = MANIFEST.read_text(encoding="utf-8")
 
 for marker in [
-    "UnityEditor.PackageManager",
-    "PackageInfo.GetAllRegisteredPackages()",
+    "PackageManagerPackageInfo = UnityEditor.PackageManager.PackageInfo",
+    "PackageManagerPackageInfo.GetAllRegisteredPackages()",
     "package.name.StartsWith(\"com.unity.\"",
     "packageName.StartsWith(\"com.unity.2d.\"",
     "Sample.FindByPackage",
@@ -50,12 +52,20 @@ for marker in [
     if marker not in importer:
         fail(f"dynamic official Unity discovery/import marker missing: {marker}")
 
+if "using UnityEditor.PackageManager;" in importer:
+    fail("broad UnityEditor.PackageManager using can reintroduce Unity 6 PackageInfo ambiguity")
+
+if "settings.preloadAudioData" not in audio_importer:
+    fail("Unity 6 AudioImporterSampleSettings.preloadAudioData is not configured")
+if "importer.preloadAudioData" in audio_importer:
+    fail("obsolete Unity 6 AudioImporter.preloadAudioData property has returned")
+
 for package in REQUIRED_PACKAGES:
     if package not in manifest:
         fail(f"official Unity 2D source package missing from manifest: {package}")
 
 for marker in [
-    "PackageInfo.GetAllRegisteredPackages()",
+    "PackageManagerPackageInfo.GetAllRegisteredPackages()",
     "com.unity.2d.",
 ]:
     if marker not in validator:
@@ -83,5 +93,5 @@ if source_call > sample_call:
 if sample_call > catalog_call:
     fail("official Unity samples must import before the asset catalog is generated")
 
-print("PASS: Unity-owned web sources are registered; all installed Unity packages are discovered; TRUE-2D-safe com.unity.2d.* samples auto-import before catalog generation")
+print("PASS: Unity-owned web sources registered; Unity 6 PackageInfo ambiguity guarded; AudioImporter sample settings are Unity-6-safe; TRUE-2D samples auto-import before catalog generation")
 sys.exit(0)
