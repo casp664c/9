@@ -11,7 +11,8 @@ namespace Kaninbanker.Editor
     {
         private const string ScenePath = "Assets/Kaninbanker/Scenes/Main.unity";
         private const string ManifestPath = "Packages/manifest.json";
-        private const string True2DGamePath = "Assets/Kaninbanker/Scripts/KaninbankerGame2D.cs";
+        private const string RuntimeDirectory = "Assets/Kaninbanker/Scripts";
+        private const string True2DGamePath = RuntimeDirectory + "/KaninbankerGame2D.cs";
 
         public int callbackOrder => 1000;
 
@@ -23,7 +24,9 @@ namespace Kaninbanker.Editor
             ValidateRequiredSource();
             ValidateModules();
             ValidateTrue2DSource();
-            Debug.Log("[Kaninbanker] PREFLIGHT PASS: TRUE 2D only, portrait, scene, source set and Physics2D are ready.");
+            ValidateEntireRuntimeIs2D();
+            ValidateVersion();
+            Debug.Log("[Kaninbanker] PREFLIGHT PASS: FULL APP TRUE 2D ONLY, portrait, Physics2D, all runtime sources clean, version 0.10.0.");
         }
 
         private static void ValidatePortrait()
@@ -57,19 +60,19 @@ namespace Kaninbanker.Editor
             string[] required =
             {
                 True2DGamePath,
-                "Assets/Kaninbanker/Scripts/KaninbankerAudio.cs",
-                "Assets/Kaninbanker/Scripts/KaninbankerFeedback.cs",
-                "Assets/Kaninbanker/Scripts/KaninbankerAtmosphere.cs",
-                "Assets/Kaninbanker/Scripts/KaninbankerScreenJuice.cs",
-                "Assets/Kaninbanker/Scripts/KaninbankerProfile.cs",
-                "Assets/Kaninbanker/Scripts/KaninbankerMusicPanel.cs",
-                "Assets/Kaninbanker/Scripts/KaninbankerMayhemPass.cs",
-                "Assets/Kaninbanker/Scripts/KaninbankerEventCircuit.cs",
-                "Assets/Kaninbanker/Scripts/KaninbankerCareerBook.cs",
-                "Assets/Kaninbanker/Scripts/KaninbankerWorldTour.cs",
-                "Assets/Kaninbanker/Scripts/KaninbankerSettingsPanel.cs",
-                "Assets/Kaninbanker/Scripts/KaninbankerTutorial.cs",
-                "Assets/Kaninbanker/Scripts/KaninbankerPerformanceGovernor.cs"
+                RuntimeDirectory + "/KaninbankerAudio.cs",
+                RuntimeDirectory + "/KaninbankerFeedback.cs",
+                RuntimeDirectory + "/KaninbankerAtmosphere.cs",
+                RuntimeDirectory + "/KaninbankerScreenJuice.cs",
+                RuntimeDirectory + "/KaninbankerProfile.cs",
+                RuntimeDirectory + "/KaninbankerMusicPanel.cs",
+                RuntimeDirectory + "/KaninbankerMayhemPass.cs",
+                RuntimeDirectory + "/KaninbankerEventCircuit.cs",
+                RuntimeDirectory + "/KaninbankerCareerBook.cs",
+                RuntimeDirectory + "/KaninbankerWorldTour.cs",
+                RuntimeDirectory + "/KaninbankerSettingsPanel.cs",
+                RuntimeDirectory + "/KaninbankerTutorial.cs",
+                RuntimeDirectory + "/KaninbankerPerformanceGovernor.cs"
             };
             for (int i = 0; i < required.Length; i++)
             {
@@ -77,7 +80,7 @@ namespace Kaninbanker.Editor
                     throw new BuildFailedException("KANINBANKER PREFLIGHT: required source file missing: " + required[i]);
             }
 
-            if (File.Exists("Assets/Kaninbanker/Scripts/KaninbankerGame.cs"))
+            if (File.Exists(RuntimeDirectory + "/KaninbankerGame.cs"))
                 throw new BuildFailedException("KANINBANKER PREFLIGHT: legacy 3D KaninbankerGame.cs has returned. TRUE 2D build refused.");
         }
 
@@ -115,19 +118,63 @@ namespace Kaninbanker.Editor
         private static void ValidateTrue2DSource()
         {
             string source = File.ReadAllText(True2DGamePath);
-            string[] required2D = { "orthographic = true", "SpriteRenderer", "CircleCollider2D", "Physics2D.OverlapPoint" };
+            string[] required2D =
+            {
+                "orthographic = true",
+                "SpriteRenderer",
+                "CircleCollider2D",
+                "Physics2D.OverlapPoint"
+            };
             for (int i = 0; i < required2D.Length; i++)
             {
                 if (!source.Contains(required2D[i]))
                     throw new BuildFailedException("KANINBANKER PREFLIGHT: TRUE 2D marker missing: " + required2D[i]);
             }
+        }
 
-            string[] forbidden3D = { "GameObject.CreatePrimitive(", "Physics.Raycast(", "LightType.Directional", "LightType.Point" };
-            for (int i = 0; i < forbidden3D.Length; i++)
+        private static void ValidateEntireRuntimeIs2D()
+        {
+            string[] forbidden =
             {
-                if (source.Contains(forbidden3D[i]))
-                    throw new BuildFailedException("KANINBANKER PREFLIGHT: executable 3D gameplay API found in TRUE 2D runtime: " + forbidden3D[i]);
+                "GameObject.CreatePrimitive(",
+                "Physics.Raycast(",
+                "Physics.RaycastAll(",
+                "Physics.SphereCast(",
+                "Physics.Overlap",
+                "MeshRenderer",
+                "MeshFilter",
+                "SkinnedMeshRenderer",
+                "new Mesh(",
+                "BoxCollider>",
+                "SphereCollider>",
+                "CapsuleCollider>",
+                "MeshCollider>",
+                "Rigidbody>",
+                "LightType.Directional",
+                "LightType.Point",
+                "LightType.Spot",
+                "ShadowQuality.",
+                "QualitySettings.shadowDistance",
+                "QualitySettings.pixelLightCount",
+                "QualitySettings.lodBias"
+            };
+
+            string[] files = Directory.GetFiles(RuntimeDirectory, "*.cs", SearchOption.AllDirectories);
+            for (int f = 0; f < files.Length; f++)
+            {
+                string source = File.ReadAllText(files[f]);
+                for (int i = 0; i < forbidden.Length; i++)
+                {
+                    if (source.Contains(forbidden[i]))
+                        throw new BuildFailedException("KANINBANKER PREFLIGHT: 3D-only runtime API found in " + files[f] + ": " + forbidden[i]);
+                }
             }
+        }
+
+        private static void ValidateVersion()
+        {
+            if (PlayerSettings.bundleVersion != "0.10.0" || PlayerSettings.Android.bundleVersionCode != 10)
+                throw new BuildFailedException("KANINBANKER PREFLIGHT: expected app version 0.10.0 / versionCode 10.");
         }
     }
 }
