@@ -25,7 +25,7 @@ namespace Kaninbanker.Editor
             ValidateBuildScene();
             ValidateRequiredSource();
             ValidateModules();
-            Debug.Log("[Kaninbanker] PREFLIGHT PASS: portrait, scene, expanded source set and required Unity modules are ready.");
+            Debug.Log("[Kaninbanker] PREFLIGHT PASS: portrait, scene, mega source set and required Unity modules are ready.");
         }
 
         private static void ValidatePortrait()
@@ -60,6 +60,8 @@ namespace Kaninbanker.Editor
                 "Assets/Kaninbanker/Scripts/KaninbankerProfile.cs",
                 "Assets/Kaninbanker/Scripts/KaninbankerMusicPanel.cs",
                 "Assets/Kaninbanker/Scripts/KaninbankerMayhemPass.cs",
+                "Assets/Kaninbanker/Scripts/KaninbankerEventCircuit.cs",
+                "Assets/Kaninbanker/Scripts/KaninbankerCareerBook.cs",
                 "Assets/Kaninbanker/Scripts/KaninbankerPerformanceGovernor.cs"
             };
 
