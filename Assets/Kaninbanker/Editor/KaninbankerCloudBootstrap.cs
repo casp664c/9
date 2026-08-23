@@ -71,7 +71,9 @@ namespace Kaninbanker.Editor
                                    EditorBuildSettings.scenes[0].path == ScenePath;
             bool settingsOk = PlayerSettings.productName == ProductName &&
                               PlayerSettings.GetApplicationIdentifier(NamedBuildTarget.Android) == ApplicationIdentifier &&
-                              PlayerSettings.defaultInterfaceOrientation == UIOrientation.Portrait;
+                              PlayerSettings.defaultInterfaceOrientation == UIOrientation.Portrait &&
+                              !PlayerSettings.allowedAutorotateToLandscapeLeft &&
+                              !PlayerSettings.allowedAutorotateToLandscapeRight;
 
             if (sceneExists && sceneConfigured && settingsOk)
                 Debug.Log("[Kaninbanker] SELF CHECK: PASS - Android portrait configuration is ready.");
@@ -83,19 +85,23 @@ namespace Kaninbanker.Editor
         {
             PlayerSettings.companyName = "casp664c";
             PlayerSettings.productName = ProductName;
-            PlayerSettings.bundleVersion = "0.2.0";
+            PlayerSettings.bundleVersion = "0.5.0";
             PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.Android, ApplicationIdentifier);
-            PlayerSettings.Android.bundleVersionCode = 2;
+            PlayerSettings.Android.bundleVersionCode = 5;
             PlayerSettings.Android.minSdkVersion = AndroidSdkVersions.AndroidApiLevel26;
             PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
             PlayerSettings.SetScriptingBackend(NamedBuildTarget.Android, ScriptingImplementation.IL2CPP);
 
-            // Portrait-only, phone-first presentation (TikTok/Reels-style vertical layout).
+            // Hard portrait lock for the TikTok/Reels-style phone layout.
             PlayerSettings.defaultInterfaceOrientation = UIOrientation.Portrait;
             PlayerSettings.allowedAutorotateToPortrait = true;
             PlayerSettings.allowedAutorotateToPortraitUpsideDown = false;
             PlayerSettings.allowedAutorotateToLandscapeLeft = false;
             PlayerSettings.allowedAutorotateToLandscapeRight = false;
+
+            // Full-performance Android defaults for the larger procedural arena.
+            PlayerSettings.runInBackground = false;
+            PlayerSettings.use32BitDisplayBuffer = true;
 
             // Keep external audio (for example YouTube Music) alive while Kaninbanker is foregrounded.
             PlayerSettings.muteOtherAudioSources = false;
@@ -134,7 +140,7 @@ namespace Kaninbanker.Editor
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             scene.name = "Main";
 
-            var root = new GameObject("KaninbankerGame");
+            GameObject root = new GameObject("KaninbankerGame");
             root.AddComponent<global::Kaninbanker.KaninbankerGame>();
             SceneManager.MoveGameObjectToScene(root, scene);
 
@@ -147,7 +153,7 @@ namespace Kaninbanker.Editor
 
         private static void EnsureBuildSettings()
         {
-            var current = EditorBuildSettings.scenes;
+            EditorBuildSettingsScene[] current = EditorBuildSettings.scenes;
             if (current != null && current.Length == 1 && current[0].path == ScenePath && current[0].enabled)
                 return;
 
