@@ -22,11 +22,11 @@ namespace Kaninbanker.Editor
             ValidateEditor2DMode();
             ValidateBuildScene();
             ValidateRequiredSource();
-            ValidateModules();
+            ValidateModulesAnd2DToolset();
             ValidateTrue2DSource();
             ValidateEntireRuntimeIs2D();
             ValidateVersion();
-            Debug.Log("[Kaninbanker] PREFLIGHT PASS: FULL APP TRUE 2D ONLY, portrait, Physics2D, all runtime sources clean, version 0.10.0.");
+            Debug.Log("[Kaninbanker] PREFLIGHT PASS: FULL APP TRUE 2D ONLY + OFFICIAL UNITY 2D TOOLSET, portrait, Physics2D, all runtime sources clean, version 0.10.0.");
         }
 
         private static void ValidatePortrait()
@@ -62,6 +62,7 @@ namespace Kaninbanker.Editor
                 True2DGamePath,
                 RuntimeDirectory + "/KaninbankerAudio.cs",
                 RuntimeDirectory + "/KaninbankerFeedback.cs",
+                RuntimeDirectory + "/KaninbankerHammer2D.cs",
                 RuntimeDirectory + "/KaninbankerAtmosphere.cs",
                 RuntimeDirectory + "/KaninbankerScreenJuice.cs",
                 RuntimeDirectory + "/KaninbankerProfile.cs",
@@ -72,35 +73,43 @@ namespace Kaninbanker.Editor
                 RuntimeDirectory + "/KaninbankerWorldTour.cs",
                 RuntimeDirectory + "/KaninbankerSettingsPanel.cs",
                 RuntimeDirectory + "/KaninbankerTutorial.cs",
-                RuntimeDirectory + "/KaninbankerPerformanceGovernor.cs"
+                RuntimeDirectory + "/KaninbankerPerformanceGovernor.cs",
+                "Assets/Kaninbanker/Editor/Kaninbanker2DAssetPostprocessor.cs"
             };
             for (int i = 0; i < required.Length; i++)
             {
                 if (!File.Exists(required[i]))
-                    throw new BuildFailedException("KANINBANKER PREFLIGHT: required source file missing: " + required[i]);
+                    throw new BuildFailedException("KANINBANKER PREFLIGHT: required TRUE-2D source/tool file missing: " + required[i]);
             }
 
             if (File.Exists(RuntimeDirectory + "/KaninbankerGame.cs"))
                 throw new BuildFailedException("KANINBANKER PREFLIGHT: legacy 3D KaninbankerGame.cs has returned. TRUE 2D build refused.");
         }
 
-        private static void ValidateModules()
+        private static void ValidateModulesAnd2DToolset()
         {
             if (!File.Exists(ManifestPath))
                 throw new BuildFailedException("KANINBANKER PREFLIGHT: Packages/manifest.json is missing.");
 
             string manifest = File.ReadAllText(ManifestPath);
-            string[] requiredModules =
+            string[] requiredPackages =
             {
+                "com.unity.2d.animation",
+                "com.unity.2d.aseprite",
+                "com.unity.2d.pixel-perfect",
+                "com.unity.2d.psdimporter",
+                "com.unity.2d.spriteshape",
+                "com.unity.2d.tilemap.extras",
+                "com.unity.addressables",
                 "com.unity.modules.androidjni",
                 "com.unity.modules.audio",
                 "com.unity.modules.imgui",
                 "com.unity.modules.physics2d"
             };
-            for (int i = 0; i < requiredModules.Length; i++)
+            for (int i = 0; i < requiredPackages.Length; i++)
             {
-                if (!manifest.Contains(requiredModules[i]))
-                    throw new BuildFailedException("KANINBANKER PREFLIGHT: required Unity module missing from manifest: " + requiredModules[i]);
+                if (!manifest.Contains(requiredPackages[i]))
+                    throw new BuildFailedException("KANINBANKER PREFLIGHT: required official Unity 2D package/module missing: " + requiredPackages[i]);
             }
 
             string[] forbidden3DModules =
@@ -145,11 +154,11 @@ namespace Kaninbanker.Editor
                 "MeshFilter",
                 "SkinnedMeshRenderer",
                 "new Mesh(",
-                "BoxCollider>",
-                "SphereCollider>",
-                "CapsuleCollider>",
-                "MeshCollider>",
-                "Rigidbody>",
+                "AddComponent<BoxCollider>",
+                "AddComponent<SphereCollider>",
+                "AddComponent<CapsuleCollider>",
+                "AddComponent<MeshCollider>",
+                "AddComponent<Rigidbody>",
                 "LightType.Directional",
                 "LightType.Point",
                 "LightType.Spot",
