@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using System;
 using System.IO;
 using System.Reflection;
 using UnityEditor;
@@ -20,9 +21,21 @@ namespace Kaninbanker.Editor
 
         public int callbackOrder => -1000;
 
+        // Unity Build Automation checks EditorBuildSettings before normal build preprocessors run.
+        // Prepare the scene synchronously when the editor assembly is loaded so Cloud Build can
+        // never reach its "no scenes configured" guard with an empty scene list.
         static KaninbankerCloudBootstrap()
         {
-            EditorApplication.delayCall += EnsureProjectReady;
+            try
+            {
+                EnsureCloudBuildInputs();
+                Debug.Log("[Kaninbanker] Early cloud-build bootstrap completed.");
+            }
+            catch (Exception exception)
+            {
+                Debug.LogError("[Kaninbanker] Early cloud-build bootstrap failed: " + exception);
+                throw;
+            }
         }
 
         public void OnPreprocessBuild(BuildReport report)
@@ -35,23 +48,32 @@ namespace Kaninbanker.Editor
         {
             ConfigurePlayerSettings();
             ConfigureLegacyInput();
+            EnsureCloudBuildInputs();
+            AssetDatabase.SaveAssets();
+        }
+
+        private static void EnsureCloudBuildInputs()
+        {
             EnsureSceneExists();
             EnsureBuildSettings();
             AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh();
         }
 
         [MenuItem("Tools/Kaninbanker/Run Static Self Check")]
         public static void RunStaticSelfCheck()
         {
-            bool ok = File.Exists(ScenePath) || AssetDatabase.LoadAssetAtPath<SceneAsset>(ScenePath) != null;
-            ok &= PlayerSettings.productName == ProductName;
-            ok &= PlayerSettings.GetApplicationIdentifier(BuildTargetGroup.Android) == ApplicationIdentifier;
+            bool sceneExists = File.Exists(ScenePath) || AssetDatabase.LoadAssetAtPath<SceneAsset>(ScenePath) != null;
+            bool sceneConfigured = EditorBuildSettings.scenes != null &&
+                                   EditorBuildSettings.scenes.Length > 0 &&
+                                   EditorBuildSettings.scenes[0].enabled &&
+                                   EditorBuildSettings.scenes[0].path == ScenePath;
+            bool settingsOk = PlayerSettings.productName == ProductName &&
+                              PlayerSettings.GetApplicationIdentifier(NamedBuildTarget.Android) == ApplicationIdentifier;
 
-            if (ok)
+            if (sceneExists && sceneConfigured && settingsOk)
                 Debug.Log("[Kaninbanker] SELF CHECK: PASS");
             else
-                Debug.LogError("[Kaninbanker] SELF CHECK: FAIL");
+                Debug.LogError($"[Kaninbanker] SELF CHECK: FAIL sceneExists={sceneExists} sceneConfigured={sceneConfigured} settingsOk={settingsOk}");
         }
 
         private static void ConfigurePlayerSettings()
@@ -59,7 +81,7 @@ namespace Kaninbanker.Editor
             PlayerSettings.companyName = "casp664c";
             PlayerSettings.productName = ProductName;
             PlayerSettings.bundleVersion = "0.1.0";
-            PlayerSettings.SetApplicationIdentifier(BuildTargetGroup.Android, ApplicationIdentifier);
+            PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.Android, ApplicationIdentifier);
             PlayerSettings.Android.bundleVersionCode = 1;
             PlayerSettings.Android.minSdkVersion = AndroidSdkVersions.AndroidApiLevel26;
             PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
@@ -67,7 +89,6 @@ namespace Kaninbanker.Editor
             PlayerSettings.defaultInterfaceOrientation = UIOrientation.LandscapeLeft;
 
             // Keep external audio (for example YouTube Music) alive while Kaninbanker is foregrounded.
-            // Internal background music can then be disabled while game SFX continue to play.
             PlayerSettings.muteOtherAudioSources = false;
         }
 
@@ -95,19 +116,23 @@ namespace Kaninbanker.Editor
 
         private static void EnsureSceneExists()
         {
-            if (AssetDatabase.LoadAssetAtPath<SceneAsset>(ScenePath) != null)
+            SceneAsset existing = AssetDatabase.LoadAssetAtPath<SceneAsset>(ScenePath);
+            if (existing != null)
                 return;
 
             Directory.CreateDirectory(SceneDirectory);
-            Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
+
+            Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             scene.name = "Main";
 
             var root = new GameObject("KaninbankerGame");
             root.AddComponent<global::Kaninbanker.KaninbankerGame>();
             SceneManager.MoveGameObjectToScene(root, scene);
 
-            EditorSceneManager.SaveScene(scene, ScenePath);
-            EditorSceneManager.CloseScene(scene, true);
+            if (!EditorSceneManager.SaveScene(scene, ScenePath, false))
+                throw new InvalidOperationException("Could not save generated Kaninbanker scene to " + ScenePath);
+
+            AssetDatabase.ImportAsset(ScenePath, ImportAssetOptions.ForceSynchronousImport);
             Debug.Log("[Kaninbanker] Generated cloud-build scene at " + ScenePath);
         }
 
@@ -121,6 +146,8 @@ namespace Kaninbanker.Editor
             {
                 new EditorBuildSettingsScene(ScenePath, true)
             };
+
+            Debug.Log("[Kaninbanker] Build Settings configured with " + ScenePath);
         }
     }
 }
