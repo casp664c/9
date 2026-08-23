@@ -37,7 +37,7 @@ namespace Kaninbanker.Editor
             try
             {
                 EnsureProjectReady();
-                Debug.Log("[Kaninbanker] First-update cloud-build fallback completed.");
+                Debug.Log("[Kaninbanker] First-update TRUE-2D cloud-build fallback completed.");
             }
             catch (Exception exception)
             {
@@ -54,6 +54,7 @@ namespace Kaninbanker.Editor
         [MenuItem("Tools/Kaninbanker/Prepare Cloud Build")]
         public static void EnsureProjectReady()
         {
+            ConfigureEditorFor2D();
             ConfigurePlayerSettings();
             ConfigureLegacyInput();
             EnsureSceneExists();
@@ -73,37 +74,39 @@ namespace Kaninbanker.Editor
                               PlayerSettings.GetApplicationIdentifier(NamedBuildTarget.Android) == ApplicationIdentifier &&
                               PlayerSettings.defaultInterfaceOrientation == UIOrientation.Portrait &&
                               !PlayerSettings.allowedAutorotateToLandscapeLeft &&
-                              !PlayerSettings.allowedAutorotateToLandscapeRight;
+                              !PlayerSettings.allowedAutorotateToLandscapeRight &&
+                              EditorSettings.defaultBehaviorMode == EditorBehaviorMode.Mode2D;
 
             if (sceneExists && sceneConfigured && settingsOk)
-                Debug.Log("[Kaninbanker] SELF CHECK: PASS - Android portrait configuration is ready.");
+                Debug.Log("[Kaninbanker] SELF CHECK: PASS - TRUE 2D + Android portrait configuration is ready.");
             else
                 Debug.LogError($"[Kaninbanker] SELF CHECK: FAIL sceneExists={sceneExists} sceneConfigured={sceneConfigured} settingsOk={settingsOk}");
+        }
+
+        private static void ConfigureEditorFor2D()
+        {
+            // Unity's project-level 2D mode: imported images default to Sprites and new scene defaults are 2D-oriented.
+            EditorSettings.defaultBehaviorMode = EditorBehaviorMode.Mode2D;
         }
 
         private static void ConfigurePlayerSettings()
         {
             PlayerSettings.companyName = "casp664c";
             PlayerSettings.productName = ProductName;
-            PlayerSettings.bundleVersion = "0.8.0";
+            PlayerSettings.bundleVersion = "0.9.0";
             PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.Android, ApplicationIdentifier);
-            PlayerSettings.Android.bundleVersionCode = 8;
+            PlayerSettings.Android.bundleVersionCode = 9;
             PlayerSettings.Android.minSdkVersion = AndroidSdkVersions.AndroidApiLevel26;
             PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
             PlayerSettings.SetScriptingBackend(NamedBuildTarget.Android, ScriptingImplementation.IL2CPP);
 
-            // Hard portrait lock for the TikTok/Reels-style phone layout.
             PlayerSettings.defaultInterfaceOrientation = UIOrientation.Portrait;
             PlayerSettings.allowedAutorotateToPortrait = true;
             PlayerSettings.allowedAutorotateToPortraitUpsideDown = false;
             PlayerSettings.allowedAutorotateToLandscapeLeft = false;
             PlayerSettings.allowedAutorotateToLandscapeRight = false;
-
-            // Full-performance Android defaults for the larger procedural arena.
             PlayerSettings.runInBackground = false;
             PlayerSettings.use32BitDisplayBuffer = true;
-
-            // Keep external audio (for example YouTube Music) alive while Kaninbanker is foregrounded.
             PlayerSettings.muteOtherAudioSources = false;
         }
 
@@ -136,19 +139,18 @@ namespace Kaninbanker.Editor
                 return;
 
             Directory.CreateDirectory(SceneDirectory);
-
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
             scene.name = "Main";
 
-            GameObject root = new GameObject("KaninbankerGame");
-            root.AddComponent<global::Kaninbanker.KaninbankerGame>();
+            GameObject root = new GameObject("KaninbankerGame2D");
+            root.AddComponent<global::Kaninbanker.KaninbankerGame2D>();
             SceneManager.MoveGameObjectToScene(root, scene);
 
             if (!EditorSceneManager.SaveScene(scene, ScenePath, false))
-                throw new InvalidOperationException("Could not save generated Kaninbanker scene to " + ScenePath);
+                throw new InvalidOperationException("Could not save generated Kaninbanker 2D scene to " + ScenePath);
 
             AssetDatabase.ImportAsset(ScenePath, ImportAssetOptions.ForceSynchronousImport);
-            Debug.Log("[Kaninbanker] Generated cloud-build scene at " + ScenePath);
+            Debug.Log("[Kaninbanker] Generated TRUE 2D cloud-build scene at " + ScenePath);
         }
 
         private static void EnsureBuildSettings()
@@ -162,7 +164,7 @@ namespace Kaninbanker.Editor
                 new EditorBuildSettingsScene(ScenePath, true)
             };
 
-            Debug.Log("[Kaninbanker] Build Settings configured with " + ScenePath);
+            Debug.Log("[Kaninbanker] Build Settings configured with TRUE 2D scene " + ScenePath);
         }
     }
 }
