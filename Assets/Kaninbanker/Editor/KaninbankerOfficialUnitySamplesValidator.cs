@@ -31,7 +31,8 @@ namespace Kaninbanker.Editor
             string importer = File.ReadAllText(ImporterPath);
             string[] discoveryMarkers =
             {
-                "PackageInfo.GetAllRegisteredPackages()",
+                "PackageManagerPackageInfo = UnityEditor.PackageManager.PackageInfo",
+                "PackageManagerPackageInfo.GetAllRegisteredPackages()",
                 "package.name.StartsWith(\"com.unity.\"",
                 "packageName.StartsWith(\"com.unity.2d.\"",
                 "Sample.FindByPackage",
@@ -45,6 +46,9 @@ namespace Kaninbanker.Editor
                 if (!importer.Contains(discoveryMarkers[i]))
                     throw new BuildFailedException("KANINBANKER UNITY-SAMPLES: automatic Unity-owned package discovery/import marker missing: " + discoveryMarkers[i]);
             }
+
+            if (importer.Contains("using UnityEditor.PackageManager;"))
+                throw new BuildFailedException("KANINBANKER UNITY-SAMPLES: broad PackageManager using can reintroduce Unity 6 PackageInfo ambiguity. Use the explicit PackageManagerPackageInfo alias.");
 
             string bootstrap = File.ReadAllText(BootstrapPath);
             if (!bootstrap.Contains("KaninbankerOfficialUnitySamples.ImportAllNonInteractiveSamples();"))
