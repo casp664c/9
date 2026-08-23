@@ -11,7 +11,7 @@ namespace Kaninbanker
         public const string FpsKey = "Kaninbanker.Settings.TargetFps";
         public const string ReducedFxKey = "Kaninbanker.Settings.ReducedFx";
 
-        private KaninbankerGame game;
+        private KaninbankerGame2D game;
         private KaninbankerAudio audioSystem;
         private bool panelOpen;
         private int targetFps;
@@ -46,7 +46,7 @@ namespace Kaninbanker
 
         private void ResolveGame()
         {
-            game = FindFirstObjectByType<KaninbankerGame>();
+            game = FindFirstObjectByType<KaninbankerGame2D>();
             if (game != null)
                 audioSystem = game.GetComponent<KaninbankerAudio>();
         }
