@@ -6,9 +6,9 @@ namespace Kaninbanker.Editor
 {
     /// <summary>
     /// Machine-readable registry of canonical Unity-owned web/content hubs that are relevant
-    /// to Kaninbanker's TRUE-2D Android production direction. This is intentionally metadata,
-    /// not a license bypass or a web scraper. Package Manager samples are imported by
-    /// KaninbankerOfficialUnitySamples; Asset Store products still require legitimate account
+    /// to Kaninbanker's TRUE-2D Android production direction. This is metadata and discovery,
+    /// not a license bypass or an uncontrolled web scraper. Package Manager samples are imported
+    /// by KaninbankerOfficialUnitySamples; Asset Store products still require legitimate account
     /// ownership/license acceptance before their files can be imported into Assets/.
     /// </summary>
     public static class KaninbankerUnityOfficialSourceRegistry
@@ -31,9 +31,15 @@ namespace Kaninbanker.Editor
 
         private static readonly Source[] Sources =
         {
-            new Source("Unity 2D", "https://unity.com/features/2d", "hub", false),
-            new Source("Unity 6 Resources Hub", "https://unity.com/campaign/unity-6-resources", "hub", false),
+            new Source("Unity Home", "https://www.unity.com", "official-home", false),
+            new Source("Unity 2D", "https://unity.com/features/2d", "2d-hub", false),
+            new Source("Unity 6 Resources Hub", "https://unity.com/campaign/unity-6-resources", "unity6-hub", false),
+            new Source("Unity 2D Asset Store", "https://assetstore.unity.com/2d", "2d-asset-catalog", true),
             new Source("Unity Technologies Asset Store Publisher", "https://assetstore.unity.com/publishers/1", "publisher", true),
+            new Source("Unity Learn - Create a 2D game", "https://learn.unity.com/collection/create-a-2d-game", "2d-learning", false),
+            new Source("Unity Learn - 2D Game Kit", "https://learn.unity.com/project/2d-game-kit", "2d-game-kit", false),
+            new Source("Unity Manual - Set up a project for 2D games", "https://docs.unity3d.com/6000.3/Documentation/Manual/setup-project-2d-game.html", "2d-docs", false),
+            new Source("Unity Package Manager Sample API", "https://docs.unity3d.com/6000.0/Documentation/ScriptReference/PackageManager.UI.Sample.html", "package-api", false),
             new Source("Lost Crypt - 2D Sample Project", "https://assetstore.unity.com/packages/essentials/tutorial-projects/lost-crypt-2d-sample-project-158673", "2d-sample", true),
             new Source("Happy Harvest - 2D Sample Project", "https://assetstore.unity.com/packages/essentials/tutorial-projects/happy-harvest-2d-sample-project-259218", "2d-sample", true),
             new Source("Dragon Crashers - URP 2D Sample Project", "https://assetstore.unity.com/packages/essentials/tutorial-projects/dragon-crashers-urp-2d-sample-project-190721", "2d-sample", true),
