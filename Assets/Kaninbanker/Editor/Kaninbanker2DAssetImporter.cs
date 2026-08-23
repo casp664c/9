@@ -50,8 +50,8 @@ namespace Kaninbanker.Editor
             settings.compressionFormat = AudioCompressionFormat.Vorbis;
             settings.quality = music ? 0.72f : 0.82f;
             settings.loadType = music ? AudioClipLoadType.Streaming : AudioClipLoadType.DecompressOnLoad;
+            settings.preloadAudioData = !music;
             importer.defaultSampleSettings = settings;
-            importer.preloadAudioData = !music;
             importer.loadInBackground = music;
         }
     }
