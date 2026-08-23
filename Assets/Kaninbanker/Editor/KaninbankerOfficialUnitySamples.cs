@@ -1,15 +1,15 @@
 #if UNITY_EDITOR
 using System;
 using UnityEditor;
-using UnityEditor.PackageManager;
 using UnityEditor.PackageManager.UI;
 using UnityEngine;
+using PackageManagerPackageInfo = UnityEditor.PackageManager.PackageInfo;
 
 namespace Kaninbanker.Editor
 {
     /// <summary>
     /// Discovers every currently loaded official Unity package (com.unity.*) through
-    /// PackageInfo.GetAllRegisteredPackages(). Cloud builds automatically import all
+    /// PackageManagerPackageInfo.GetAllRegisteredPackages(). Cloud builds automatically import all
     /// non-interactive samples from TRUE-2D-safe official packages before Kaninbanker's
     /// asset catalog is rebuilt.
     ///
@@ -34,7 +34,7 @@ namespace Kaninbanker.Editor
 
             importAttemptedThisDomain = true;
 
-            PackageInfo[] packages = PackageInfo.GetAllRegisteredPackages();
+            PackageManagerPackageInfo[] packages = PackageManagerPackageInfo.GetAllRegisteredPackages();
             if (packages == null || packages.Length == 0)
             {
                 Debug.LogWarning("[Kaninbanker][UnitySamples] Unity reported no registered packages. Asset catalog fallback remains active.");
@@ -52,7 +52,7 @@ namespace Kaninbanker.Editor
 
             for (int p = 0; p < packages.Length; p++)
             {
-                PackageInfo package = packages[p];
+                PackageManagerPackageInfo package = packages[p];
                 if (package == null || string.IsNullOrEmpty(package.name) || !IsUnityOwned(package.name))
                     continue;
 
@@ -88,13 +88,13 @@ namespace Kaninbanker.Editor
         [MenuItem("Tools/Kaninbanker/Report ALL Installed Unity-Owned Packages")]
         public static void ReportAllUnityOwnedPackages()
         {
-            PackageInfo[] packages = PackageInfo.GetAllRegisteredPackages();
+            PackageManagerPackageInfo[] packages = PackageManagerPackageInfo.GetAllRegisteredPackages();
             int count = 0;
             if (packages != null)
             {
                 for (int i = 0; i < packages.Length; i++)
                 {
-                    PackageInfo package = packages[i];
+                    PackageManagerPackageInfo package = packages[i];
                     if (package == null || string.IsNullOrEmpty(package.name) || !IsUnityOwned(package.name))
                         continue;
 
