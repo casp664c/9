@@ -25,5 +25,8 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Run source audit
+      - name: Run TRUE 2D source audit
         run: python scripts/source_audit.py
+
+      - name: Run Unity 2D asset pipeline audit
+        run: python scripts/asset_pipeline_audit.py
