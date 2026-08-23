@@ -65,6 +65,10 @@ namespace Kaninbanker.Editor
             PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
             PlayerSettings.SetScriptingBackend(NamedBuildTarget.Android, ScriptingImplementation.IL2CPP);
             PlayerSettings.defaultInterfaceOrientation = UIOrientation.LandscapeLeft;
+
+            // Keep external audio (for example YouTube Music) alive while Kaninbanker is foregrounded.
+            // Internal background music can then be disabled while game SFX continue to play.
+            PlayerSettings.muteOtherAudioSources = false;
         }
 
         private static void ConfigureLegacyInput()
