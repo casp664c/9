@@ -1,5 +1,13 @@
-Kaninbanker Unity Build Automation source branch
-branch=build/kaninbanker-unity-cloud
-current_fix=Unity 6 package manifest corrected
-invalid_dependency_removed=com.unity.modules.input
-expected_next_revision=616c94ab5fb2110c14627ec3b1a8b5a2295b48d8
+Kaninbanker Unity Build Automation source
+branch=build/kaninbanker-unity-live
+engine=Unity 6000.0.60f1
+platform=Android
+orientation=portrait-only
+runtime=TRUE-2D-only
+scene_root=KaninbankerGame2D
+physics=com.unity.modules.physics2d
+forbidden_modules=com.unity.modules.physics,com.unity.modules.particlesystem
+app_version=0.10.0
+android_version_code=10
+build_rule=fresh-build-only-no-replay
+preflight_marker=PREFLIGHT PASS: FULL APP TRUE 2D ONLY
