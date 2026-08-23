@@ -33,7 +33,7 @@ namespace Kaninbanker.Editor
             {
                 "PackageManagerPackageInfo = UnityEditor.PackageManager.PackageInfo",
                 "PackageManagerPackageInfo.GetAllRegisteredPackages()",
-                "package.name.StartsWith(\"com.unity.\"",
+                "packageName.StartsWith(\"com.unity.\"",
                 "packageName.StartsWith(\"com.unity.2d.\"",
                 "Sample.FindByPackage",
                 "Sample.ImportOptions.OverridePreviousImports",
