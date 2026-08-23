@@ -4,8 +4,8 @@ using UnityEngine;
 namespace Kaninbanker
 {
     /// <summary>
-    /// Procedural phone-game audio. Every effect is synthesized at runtime so the cloud build
-    /// stays self-contained while still having a much denser arcade soundscape.
+    /// 2D arcade audio. Imported project AudioClips are preferred when the generated asset catalog
+    /// contains matching categories; procedural synthesis remains a zero-dependency fallback.
     /// </summary>
     public sealed class KaninbankerAudio : MonoBehaviour
     {
@@ -99,8 +99,29 @@ namespace Kaninbanker
             });
 
             musicClip = CreateMusicLoop();
+            ApplyImportedAudioOverrides();
             musicSource.clip = musicClip;
             ApplyMuteState();
+        }
+
+        private void ApplyImportedAudioOverrides()
+        {
+            Kaninbanker2DAssetCatalog catalog = Kaninbanker2DAssetCatalog.Load();
+            if (catalog == null)
+                return;
+
+            hitClip = catalog.PickHit(11) ?? hitClip;
+            comboClip = catalog.PickCombo(13) ?? comboClip;
+            missClip = catalog.PickMiss(17) ?? missClip;
+            popClip = catalog.PickRabbitPop(19) ?? popClip;
+            startClip = catalog.PickRoundStart(23) ?? startClip;
+            gameOverClip = catalog.PickGameOver(29) ?? gameOverClip;
+            uiClip = catalog.PickUiAudio(31) ?? uiClip;
+            powerClip = catalog.PickPower(37) ?? powerClip;
+            bombClip = catalog.PickBomb(41) ?? bombClip;
+            bossClip = catalog.PickBoss(43) ?? bossClip;
+            rewardClip = catalog.PickReward(47) ?? rewardClip;
+            musicClip = catalog.PickMusic(53) ?? musicClip;
         }
 
         public void StartMusic()
