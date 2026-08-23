@@ -12,6 +12,7 @@ namespace Kaninbanker.Editor
         private const string ScenePath = "Assets/Kaninbanker/Scenes/Main.unity";
         private const string ManifestPath = "Packages/manifest.json";
         private const string RuntimeDirectory = "Assets/Kaninbanker/Scripts";
+        private const string EditorDirectory = "Assets/Kaninbanker/Editor";
         private const string True2DGamePath = RuntimeDirectory + "/KaninbankerGame2D.cs";
 
         public int callbackOrder => 1000;
@@ -21,12 +22,13 @@ namespace Kaninbanker.Editor
             ValidatePortrait();
             ValidateEditor2DMode();
             ValidateBuildScene();
-            ValidateRequiredSource();
+            ValidateRequiredSourceAndAssetPipeline();
             ValidateModulesAnd2DToolset();
             ValidateTrue2DSource();
             ValidateEntireRuntimeIs2D();
+            ValidateAssetCatalogPipeline();
             ValidateVersion();
-            Debug.Log("[Kaninbanker] PREFLIGHT PASS: FULL APP TRUE 2D ONLY + OFFICIAL UNITY 2D TOOLSET, portrait, Physics2D, all runtime sources clean, version 0.10.0.");
+            Debug.Log("[Kaninbanker] PREFLIGHT PASS: FULL APP TRUE 2D ONLY + OFFICIAL UNITY 2D TOOLSET + IMPORTED ASSET CATALOG, portrait, version 0.10.0.");
         }
 
         private static void ValidatePortrait()
@@ -55,11 +57,13 @@ namespace Kaninbanker.Editor
                 throw new BuildFailedException("KANINBANKER PREFLIGHT: generated Main.unity does not exist on disk.");
         }
 
-        private static void ValidateRequiredSource()
+        private static void ValidateRequiredSourceAndAssetPipeline()
         {
             string[] required =
             {
                 True2DGamePath,
+                RuntimeDirectory + "/Kaninbanker2DAssetCatalog.cs",
+                RuntimeDirectory + "/KaninbankerImported2DPresentation.cs",
                 RuntimeDirectory + "/KaninbankerAudio.cs",
                 RuntimeDirectory + "/KaninbankerFeedback.cs",
                 RuntimeDirectory + "/KaninbankerHammer2D.cs",
@@ -74,8 +78,13 @@ namespace Kaninbanker.Editor
                 RuntimeDirectory + "/KaninbankerSettingsPanel.cs",
                 RuntimeDirectory + "/KaninbankerTutorial.cs",
                 RuntimeDirectory + "/KaninbankerPerformanceGovernor.cs",
-                "Assets/Kaninbanker/Editor/Kaninbanker2DAssetPostprocessor.cs"
+                EditorDirectory + "/Kaninbanker2DAssetCatalogBuilder.cs",
+                EditorDirectory + "/Kaninbanker2DAssetImporter.cs",
+                EditorDirectory + "/Kaninbanker2DAssetPostprocessor.cs",
+                EditorDirectory + "/KaninbankerCloudBootstrap.cs",
+                EditorDirectory + "/KaninbankerCloudImportBootstrap.cs"
             };
+
             for (int i = 0; i < required.Length; i++)
             {
                 if (!File.Exists(required[i]))
@@ -178,6 +187,38 @@ namespace Kaninbanker.Editor
                         throw new BuildFailedException("KANINBANKER PREFLIGHT: 3D-only runtime API found in " + files[f] + ": " + forbidden[i]);
                 }
             }
+        }
+
+        private static void ValidateAssetCatalogPipeline()
+        {
+            string builder = File.ReadAllText(EditorDirectory + "/Kaninbanker2DAssetCatalogBuilder.cs");
+            string bootstrap = File.ReadAllText(EditorDirectory + "/KaninbankerCloudBootstrap.cs");
+            string presentation = File.ReadAllText(RuntimeDirectory + "/KaninbankerImported2DPresentation.cs");
+            string audio = File.ReadAllText(RuntimeDirectory + "/KaninbankerAudio.cs");
+            string feedback = File.ReadAllText(RuntimeDirectory + "/KaninbankerFeedback.cs");
+
+            string[] builderMarkers =
+            {
+                "AssetDatabase.FindAssets(\"t:Sprite\"",
+                "AssetDatabase.FindAssets(\"t:AudioClip\"",
+                "catalog.normalRabbits",
+                "catalog.hammers",
+                "catalog.music"
+            };
+            for (int i = 0; i < builderMarkers.Length; i++)
+            {
+                if (!builder.Contains(builderMarkers[i]))
+                    throw new BuildFailedException("KANINBANKER PREFLIGHT: asset catalog builder marker missing: " + builderMarkers[i]);
+            }
+
+            if (!bootstrap.Contains("Kaninbanker2DAssetCatalogBuilder.BuildCatalog();"))
+                throw new BuildFailedException("KANINBANKER PREFLIGHT: Cloud Bootstrap no longer rebuilds the imported 2D asset catalog.");
+            if (!presentation.Contains("Kaninbanker2DAssetCatalog.Load()"))
+                throw new BuildFailedException("KANINBANKER PREFLIGHT: imported 2D presentation is not reading the generated asset catalog.");
+            if (!audio.Contains("ApplyImportedAudioOverrides"))
+                throw new BuildFailedException("KANINBANKER PREFLIGHT: imported audio overrides are not connected.");
+            if (!feedback.Contains("catalog.PickEffect"))
+                throw new BuildFailedException("KANINBANKER PREFLIGHT: imported 2D effect sprites are not connected.");
         }
 
         private static void ValidateVersion()
