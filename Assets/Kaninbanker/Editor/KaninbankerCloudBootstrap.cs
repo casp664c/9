@@ -18,22 +18,34 @@ namespace Kaninbanker.Editor
         private const string ScenePath = SceneDirectory + "/Main.unity";
         private const string ProductName = "Kaninbanker";
         private const string ApplicationIdentifier = "com.casp664c.kaninbanker";
+        private static bool startupFallbackExecuted;
 
         public int callbackOrder => -1000;
 
-        // Unity Build Automation checks EditorBuildSettings before normal build preprocessors run.
-        // Prepare the scene synchronously when the editor assembly is loaded so Cloud Build can
-        // never reach its "no scenes configured" guard with an empty scene list.
+        // Do not perform AssetDatabase/scene work directly in an InitializeOnLoad constructor.
+        // Unity invokes it before asset importing is guaranteed to be complete. The companion
+        // AssetPostprocessor performs the primary bootstrap after the domain reload; this update
+        // callback is a one-shot fallback for unusual batch-mode startup ordering.
         static KaninbankerCloudBootstrap()
         {
+            EditorApplication.update += PrepareOnFirstEditorUpdate;
+        }
+
+        private static void PrepareOnFirstEditorUpdate()
+        {
+            EditorApplication.update -= PrepareOnFirstEditorUpdate;
+            if (startupFallbackExecuted)
+                return;
+
+            startupFallbackExecuted = true;
             try
             {
-                EnsureCloudBuildInputs();
-                Debug.Log("[Kaninbanker] Early cloud-build bootstrap completed.");
+                EnsureProjectReady();
+                Debug.Log("[Kaninbanker] First-update cloud-build fallback completed.");
             }
             catch (Exception exception)
             {
-                Debug.LogError("[Kaninbanker] Early cloud-build bootstrap failed: " + exception);
+                Debug.LogError("[Kaninbanker] First-update cloud-build fallback failed: " + exception);
                 throw;
             }
         }
@@ -48,12 +60,6 @@ namespace Kaninbanker.Editor
         {
             ConfigurePlayerSettings();
             ConfigureLegacyInput();
-            EnsureCloudBuildInputs();
-            AssetDatabase.SaveAssets();
-        }
-
-        private static void EnsureCloudBuildInputs()
-        {
             EnsureSceneExists();
             EnsureBuildSettings();
             AssetDatabase.SaveAssets();
