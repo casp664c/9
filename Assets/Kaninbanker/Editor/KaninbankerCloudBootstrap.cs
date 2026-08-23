@@ -57,6 +57,7 @@ namespace Kaninbanker.Editor
             ConfigureEditorFor2D();
             ConfigurePlayerSettings();
             ConfigureLegacyInput();
+            KaninbankerOfficialUnitySamples.ImportAllNonInteractiveSamples();
             Kaninbanker2DAssetCatalogBuilder.BuildCatalog();
             RegenerateTrue2DScene();
             EnsureBuildSettings();
@@ -135,8 +136,6 @@ namespace Kaninbanker.Editor
 
         private static void RegenerateTrue2DScene()
         {
-            // Main.unity is generated build input, not hand-authored content. Recreate it every time so a
-            // cached/untracked scene from an older 3D cloud workspace can NEVER become the next Android build.
             Directory.CreateDirectory(SceneDirectory);
 
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
