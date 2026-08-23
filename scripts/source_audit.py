@@ -9,11 +9,13 @@ TRUE_2D_GAME = "Assets/Kaninbanker/Scripts/KaninbankerGame2D.cs"
 LEGACY_3D_GAME = "Assets/Kaninbanker/Scripts/KaninbankerGame.cs"
 BOOTSTRAP = "Assets/Kaninbanker/Editor/KaninbankerCloudBootstrap.cs"
 PREFLIGHT = "Assets/Kaninbanker/Editor/KaninbankerPreflightValidator.cs"
+ASSET_POSTPROCESSOR = "Assets/Kaninbanker/Editor/Kaninbanker2DAssetPostprocessor.cs"
 
 REQUIRED = [
     TRUE_2D_GAME,
     "Assets/Kaninbanker/Scripts/KaninbankerAudio.cs",
     "Assets/Kaninbanker/Scripts/KaninbankerFeedback.cs",
+    "Assets/Kaninbanker/Scripts/KaninbankerHammer2D.cs",
     "Assets/Kaninbanker/Scripts/KaninbankerAtmosphere.cs",
     "Assets/Kaninbanker/Scripts/KaninbankerScreenJuice.cs",
     "Assets/Kaninbanker/Scripts/KaninbankerProfile.cs",
@@ -27,18 +29,27 @@ REQUIRED = [
     "Assets/Kaninbanker/Scripts/KaninbankerPerformanceGovernor.cs",
     BOOTSTRAP,
     PREFLIGHT,
+    ASSET_POSTPROCESSOR,
     "Packages/manifest.json",
     "ProjectSettings/ProjectVersion.txt",
     "Docs/TRUE_2D_MIGRATION.md",
+    "Docs/2D_ART_DIRECTION.md",
     "Docs/AI/UnityProjectContext.md",
 ]
 
-REQUIRED_MODULES = [
-    "com.unity.modules.androidjni",
-    "com.unity.modules.audio",
-    "com.unity.modules.imgui",
-    "com.unity.modules.physics2d",
-]
+REQUIRED_PACKAGES = {
+    "com.unity.2d.animation": "10.2.2",
+    "com.unity.2d.aseprite": "1.1.10",
+    "com.unity.2d.pixel-perfect": "5.0.3",
+    "com.unity.2d.psdimporter": "9.1.1",
+    "com.unity.2d.spriteshape": "10.0.7",
+    "com.unity.2d.tilemap.extras": "4.1.0",
+    "com.unity.addressables": "2.7.6",
+    "com.unity.modules.androidjni": "1.0.0",
+    "com.unity.modules.audio": "1.0.0",
+    "com.unity.modules.imgui": "1.0.0",
+    "com.unity.modules.physics2d": "1.0.0",
+}
 
 FORBIDDEN_MODULES = [
     "com.unity.modules.physics",
@@ -81,7 +92,7 @@ def check_files() -> None:
         fail("Missing required files: " + ", ".join(missing))
     if (ROOT / LEGACY_3D_GAME).exists():
         fail("legacy 3D runtime has returned: " + LEGACY_3D_GAME)
-    print(f"PASS files: {len(REQUIRED)} TRUE-2D production files present; legacy 3D runtime absent")
+    print(f"PASS files: {len(REQUIRED)} TRUE-2D production/tool files present; legacy 3D runtime absent")
 
 
 def check_manifest() -> None:
@@ -95,9 +106,10 @@ def check_manifest() -> None:
     if not isinstance(deps, dict):
         fail("manifest dependencies must be an object")
 
-    for module in REQUIRED_MODULES:
-        if module not in deps:
-            fail(f"required TRUE-2D Unity module missing: {module}")
+    for package, expected_version in REQUIRED_PACKAGES.items():
+        actual = deps.get(package)
+        if actual != expected_version:
+            fail(f"required Unity 2D package/version mismatch: {package} expected {expected_version}, got {actual}")
 
     for module in FORBIDDEN_MODULES:
         if module in deps:
@@ -106,7 +118,7 @@ def check_manifest() -> None:
     if "com.unity.modules.input" in deps:
         fail("forbidden invalid package returned: com.unity.modules.input")
 
-    print("PASS manifest: Physics2D present; legacy Physics/ParticleSystem modules absent")
+    print(f"PASS manifest: {len(REQUIRED_PACKAGES)} pinned Unity 6 2D/runtime packages present; legacy Physics/ParticleSystem absent")
 
 
 def strip_strings_and_comments(text: str) -> str:
@@ -249,7 +261,12 @@ def check_true_2d_runtime() -> None:
     if "RegenerateTrue2DScene();" not in bootstrap:
         fail("cloud bootstrap no longer forcibly regenerates the TRUE-2D Main scene")
 
-    print(f"PASS TRUE 2D: {len(runtime_files)} runtime C# files scanned; no forbidden 3D APIs")
+    post = (ROOT / ASSET_POSTPROCESSOR).read_text(encoding="utf-8")
+    for marker in ["TextureImporterType.Sprite", "mipmapEnabled = false", "TextureImporterFormat.ASTC_6x6"]:
+        if marker not in post:
+            fail(f"2D asset import policy marker missing: {marker}")
+
+    print(f"PASS TRUE 2D: {len(runtime_files)} runtime C# files scanned; sprite import policy active; no forbidden 3D APIs")
 
 
 def check_version() -> None:
@@ -273,7 +290,7 @@ def check_docs() -> None:
 
 
 def main() -> int:
-    print("Kaninbanker FULL TRUE-2D source audit")
+    print("Kaninbanker FULL TRUE-2D + UNITY 2D TOOLSET source audit")
     check_files()
     check_manifest()
     check_csharp_structure()
@@ -281,7 +298,7 @@ def main() -> int:
     check_true_2d_runtime()
     check_version()
     check_docs()
-    print("SOURCE AUDIT PASS — FULL APP TRUE 2D ONLY")
+    print("SOURCE AUDIT PASS — FULL APP TRUE 2D + OFFICIAL UNITY 2D TOOLSET")
     return 0
 
 
