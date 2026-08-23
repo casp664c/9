@@ -35,9 +35,11 @@ namespace Kaninbanker.Editor
             new Source("Unity 2D", "https://unity.com/features/2d", "2d-hub", false),
             new Source("Unity 6 Resources Hub", "https://unity.com/campaign/unity-6-resources", "unity6-hub", false),
             new Source("Unity 2D Asset Store", "https://assetstore.unity.com/2d", "2d-asset-catalog", true),
+            new Source("Unity Tutorial Projects", "https://assetstore.unity.com/essentials/tutorial-projects", "tutorial-catalog", true),
             new Source("Unity Technologies Asset Store Publisher", "https://assetstore.unity.com/publishers/1", "publisher", true),
             new Source("Unity Learn - Create a 2D game", "https://learn.unity.com/collection/create-a-2d-game", "2d-learning", false),
             new Source("Unity Learn - 2D Game Kit", "https://learn.unity.com/project/2d-game-kit", "2d-game-kit", false),
+            new Source("2D Game Kit - Asset Store", "https://assetstore.unity.com/packages/templates/tutorials/2d-game-kit-107098", "2d-game-kit", true),
             new Source("Unity Manual - Set up a project for 2D games", "https://docs.unity3d.com/6000.3/Documentation/Manual/setup-project-2d-game.html", "2d-docs", false),
             new Source("Unity Package Manager Sample API", "https://docs.unity3d.com/6000.0/Documentation/ScriptReference/PackageManager.UI.Sample.html", "package-api", false),
             new Source("Lost Crypt - 2D Sample Project", "https://assetstore.unity.com/packages/essentials/tutorial-projects/lost-crypt-2d-sample-project-158673", "2d-sample", true),
@@ -47,7 +49,8 @@ namespace Kaninbanker.Editor
             new Source("QuizU - A UI Toolkit Sample", "https://assetstore.unity.com/packages/essentials/tutorial-projects/quizu-a-ui-toolkit-sample-268492", "ui-sample", true),
             new Source("2D Animation Samples", "https://assetstore.unity.com/packages/2d/characters/2d-animation-samples-354550", "2d-animation", true),
             new Source("Unity 2D Renderer Samples", "https://github.com/Unity-Technologies/2d-renderer-samples", "official-source-repo", false),
-            new Source("Unity 2D Tech Demos", "https://github.com/Unity-Technologies/2d-techdemos", "official-source-repo", false)
+            new Source("Unity 2D Tech Demos", "https://github.com/Unity-Technologies/2d-techdemos", "official-source-repo", false),
+            new Source("Unity Technologies GitHub", "https://github.com/Unity-Technologies", "official-source-org", false)
         };
 
         [MenuItem("Tools/Kaninbanker/Report Official Unity Web Sources")]
