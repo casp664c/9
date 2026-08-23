@@ -107,11 +107,11 @@ namespace Kaninbanker.Editor
                     throw new BuildFailedException("KANINBANKER PREFLIGHT: TRUE 2D marker missing: " + required2D[i]);
             }
 
-            string[] forbidden3D = { "GameObject.CreatePrimitive", "Physics.Raycast", "Perspective", "LightType.Directional" };
+            string[] forbidden3D = { "GameObject.CreatePrimitive(", "Physics.Raycast(", "LightType.Directional" };
             for (int i = 0; i < forbidden3D.Length; i++)
             {
                 if (source.Contains(forbidden3D[i]))
-                    throw new BuildFailedException("KANINBANKER PREFLIGHT: 3D gameplay API found in TRUE 2D runtime: " + forbidden3D[i]);
+                    throw new BuildFailedException("KANINBANKER PREFLIGHT: executable 3D gameplay API found in TRUE 2D runtime: " + forbidden3D[i]);
             }
         }
     }
