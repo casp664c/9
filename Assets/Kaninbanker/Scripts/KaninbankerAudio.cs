@@ -10,6 +10,7 @@ namespace Kaninbanker
     public sealed class KaninbankerAudio : MonoBehaviour
     {
         private const string MuteKey = "Kaninbanker.AudioMuted";
+        private const string InternalMusicKey = "Kaninbanker.InternalMusicEnabled";
         private const int SampleRate = 22050;
 
         private AudioSource musicSource;
@@ -23,12 +24,15 @@ namespace Kaninbanker
         private AudioClip uiClip;
         private AudioClip musicClip;
         private bool muted;
+        private bool internalMusicEnabled;
 
         public bool IsMuted => muted;
+        public bool InternalMusicEnabled => internalMusicEnabled;
 
         private void Awake()
         {
             muted = PlayerPrefs.GetInt(MuteKey, 0) != 0;
+            internalMusicEnabled = PlayerPrefs.GetInt(InternalMusicKey, 1) != 0;
 
             musicSource = gameObject.AddComponent<AudioSource>();
             musicSource.loop = true;
@@ -82,15 +86,19 @@ namespace Kaninbanker
                 musicSource.Play();
         }
 
-        public void PlayRoundStart()
+        public void SetInternalMusicEnabled(bool enabled)
         {
-            Play(startClip, 1f, 1f);
+            internalMusicEnabled = enabled;
+            PlayerPrefs.SetInt(InternalMusicKey, enabled ? 1 : 0);
+            PlayerPrefs.Save();
+            ApplyMuteState();
+
+            if (enabled && !musicSource.isPlaying)
+                musicSource.Play();
         }
 
-        public void PlayGameOver()
-        {
-            Play(gameOverClip, 0.95f, 1f);
-        }
+        public void PlayRoundStart() => Play(startClip, 1f, 1f);
+        public void PlayGameOver() => Play(gameOverClip, 0.95f, 1f);
 
         public void PlayRabbitPop(float difficulty01)
         {
@@ -105,15 +113,8 @@ namespace Kaninbanker
                 Play(comboClip, 0.52f, Mathf.Clamp(0.9f + combo * 0.02f, 0.9f, 1.25f));
         }
 
-        public void PlayMiss()
-        {
-            Play(missClip, 0.42f, 1f);
-        }
-
-        public void PlayUi()
-        {
-            Play(uiClip, 0.42f, 1f);
-        }
+        public void PlayMiss() => Play(missClip, 0.42f, 1f);
+        public void PlayUi() => Play(uiClip, 0.42f, 1f);
 
         public void ToggleMute()
         {
@@ -125,7 +126,7 @@ namespace Kaninbanker
 
         private void ApplyMuteState()
         {
-            musicSource.mute = muted;
+            musicSource.mute = muted || !internalMusicEnabled;
             sfxSource.mute = muted;
         }
 
@@ -190,11 +191,11 @@ namespace Kaninbanker
                 float local = time - Mathf.Floor(time);
                 float gate = local < 0.72f ? 1f : Mathf.Lerp(1f, 0f, (local - 0.72f) / 0.28f);
 
-                // Mild square-ish lead plus sine bass; intentionally simple and lightweight.
                 float leadSine = Mathf.Sin(2f * Mathf.PI * melody[step] * time);
                 float lead = Mathf.Sign(leadSine) * 0.12f + leadSine * 0.08f;
                 float low = Mathf.Sin(2f * Mathf.PI * bass[step] * time) * 0.10f;
-                float tick = (local < 0.035f ? UnityEngine.Random.Range(-1f, 1f) * (1f - local / 0.035f) : 0f) * 0.035f;
+                float tickEnvelope = local < 0.035f ? 1f - local / 0.035f : 0f;
+                float tick = Mathf.Sin(2f * Mathf.PI * 2600f * time) * tickEnvelope * 0.035f;
                 data[i] = Mathf.Clamp((lead * gate) + low + tick, -0.28f, 0.28f);
             }
 
