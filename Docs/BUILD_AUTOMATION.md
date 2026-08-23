@@ -1,45 +1,86 @@
-# Unity Build Automation setup for Kaninbanker
+# Unity Build Automation setup for Kaninbanker TRUE 2D
 
-Use this repository with Unity Cloud Build Automation.
+Use this repository with Unity Build Automation.
 
-## First validation build
-
-Create an Android build configuration with:
+## Current Android build configuration
 
 - Repository: `casp664c/9`
-- Branch: `build/kaninbanker-unity-cloud`
+- Branch: `build/kaninbanker-unity-live`
 - Project subfolder: leave empty
 - Unity version: `6000.0.60f1`
 - Platform: Android
-- Build format: APK for direct phone testing
+- Build format for phone testing: APK
 - Development build: off
-- Signing: Unity/default debug signing for the first test build
+- Signing for test builds: Unity/default debug signing
 
-The project bootstrap creates the gameplay scene automatically when Unity imports the project. It also configures Android package id, ARM64, IL2CPP, API 26 minimum and landscape orientation.
+Current application version: `0.10.0` / Android versionCode `10`.
 
-## Expected first-build flow
+## TRUE-2D guarantees applied before each build
 
-1. Unity Cloud clones the branch.
-2. Unity 6000.0.60f1 imports the project.
-3. `KaninbankerCloudBootstrap` configures Android settings and generates `Assets/Kaninbanker/Scenes/Main.unity` if missing.
-4. The scene is added to Build Settings.
-5. Build Automation creates the Android artifact.
-6. Read the build log before merging the branch to `main`.
+`KaninbankerCloudBootstrap` runs before the Android build and:
 
-## If the default cloud build does not pick up the generated scene
+1. forces `EditorSettings.defaultBehaviorMode = EditorBehaviorMode.Mode2D`;
+2. locks Android to portrait and disables landscape autorotation;
+3. configures package id, ARM64, IL2CPP and API 26 minimum;
+4. regenerates `Assets/Kaninbanker/Scenes/Main.unity` from scratch;
+5. attaches `KaninbankerGame2D` as the generated scene root;
+6. replaces Build Settings with that generated scene.
 
-Use the custom static build method:
+The scene is regenerated even if a file already exists. This is intentional: a cached scene from an older 3D Unity Cloud workspace must never become build input again.
+
+## Preflight gate
+
+Before Unity spends time on the full Android player build, `KaninbankerPreflightValidator` checks:
+
+- portrait lock
+- Unity 2D editor mode
+- generated Main scene
+- required runtime files
+- `com.unity.modules.physics2d`
+- absence of legacy Unity 3D Physics and ParticleSystem modules
+- absence of the deleted `KaninbankerGame.cs`
+- orthographic + SpriteRenderer + Collider2D + Physics2D markers
+- no forbidden 3D runtime APIs across the entire `Assets/Kaninbanker/Scripts` folder
+- version `0.10.0` / versionCode `10`
+
+Expected successful log marker:
+
+`PREFLIGHT PASS: FULL APP TRUE 2D ONLY`
+
+## GitHub source audit
+
+GitHub Actions runs:
+
+`python scripts/source_audit.py`
+
+The source audit is an additional fast regression gate. It does not replace Unity compilation, but it catches accidental reintroduction of 3D files/modules/APIs before a longer cloud build.
+
+## Build flow
+
+1. Unity Cloud clones `build/kaninbanker-unity-live`.
+2. Confirm the log shows the newest revision, not a replayed historical revision.
+3. Unity imports the project.
+4. Bootstrap forces 2D/portrait and regenerates Main.unity.
+5. Preflight requires FULL APP TRUE 2D ONLY.
+6. Unity creates the Android APK.
+7. Build must end in SUCCESS.
+8. Install the APK on a real portrait Android phone and visually confirm front-facing flat 2D gameplay.
+
+## Important: always start a new build after source changes
+
+Do not use Replay/Genspil on an older successful build when validating new commits. Start a fresh build so Unity checks out the current branch revision.
+
+## Custom Android build method
+
+If the Build Automation configuration needs an explicit method, use:
 
 `Kaninbanker.Editor.KaninbankerBuild.BuildAndroidApk`
 
-It creates `Builds/Android/Kaninbanker.apk` and throws an error if Unity reports a failed build.
-
 ## Release later
 
-After the APK prototype is proven on a device:
+After the TRUE-2D APK is validated on devices:
 
-- merge the validated branch to `main`
-- switch output to AAB for Google Play
-- configure a permanent release keystore
-- increase Android version code for every store update
-- never commit signing passwords or keystore secrets to GitHub
+- use AAB for Google Play
+- configure a permanent release keystore outside source control
+- increase Android versionCode on every store update
+- never commit signing passwords, GitHub tokens, Unity credentials or keystores
