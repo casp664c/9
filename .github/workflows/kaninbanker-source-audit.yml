@@ -33,3 +33,6 @@ jobs:
 
       - name: Run official Unity sample import audit
         run: python scripts/unity_official_samples_audit.py
+
+      - name: Run mega expansion audit
+        run: python scripts/mega_expansion_audit.py
