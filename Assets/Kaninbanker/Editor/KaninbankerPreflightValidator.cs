@@ -52,6 +52,8 @@ namespace Kaninbanker.Editor
                 "Assets/Kaninbanker/Scripts/KaninbankerGame.cs",
                 "Assets/Kaninbanker/Scripts/KaninbankerAudio.cs",
                 "Assets/Kaninbanker/Scripts/KaninbankerFeedback.cs",
+                "Assets/Kaninbanker/Scripts/KaninbankerAtmosphere.cs",
+                "Assets/Kaninbanker/Scripts/KaninbankerScreenJuice.cs",
                 "Assets/Kaninbanker/Scripts/KaninbankerProfile.cs",
                 "Assets/Kaninbanker/Scripts/KaninbankerMusicPanel.cs",
                 "Assets/Kaninbanker/Scripts/KaninbankerMayhemPass.cs",
