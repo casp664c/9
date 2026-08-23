@@ -1,4 +1,5 @@
 Kaninbanker Unity Build Automation source branch
-branch=build/kaninbanker-unity-live
-base_fix_commit=9876b9d88c9d1a9363a1e317647be1a4ae2763c3
-purpose=force Unity Build Automation to resolve a fresh branch head instead of the stale revision 677de7a8654d65736bdd4eb2c8a94cdebb66fb35
+branch=build/kaninbanker-unity-cloud
+current_fix=Unity 6 package manifest corrected
+invalid_dependency_removed=com.unity.modules.input
+expected_next_revision=616c94ab5fb2110c14627ec3b1a8b5a2295b48d8
