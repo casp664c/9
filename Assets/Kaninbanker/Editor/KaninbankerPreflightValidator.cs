@@ -7,11 +7,6 @@ using UnityEngine;
 
 namespace Kaninbanker.Editor
 {
-    /// <summary>
-    /// Fails cloud builds early with a readable message instead of letting another unrelated
-    /// configuration error surface 10 minutes later. This runs after the bootstrap has repaired
-    /// the generated scene and player settings.
-    /// </summary>
     public sealed class KaninbankerPreflightValidator : IPreprocessBuildWithReport
     {
         private const string ScenePath = "Assets/Kaninbanker/Scenes/Main.unity";
@@ -63,6 +58,7 @@ namespace Kaninbanker.Editor
                 "Assets/Kaninbanker/Scripts/KaninbankerEventCircuit.cs",
                 "Assets/Kaninbanker/Scripts/KaninbankerCareerBook.cs",
                 "Assets/Kaninbanker/Scripts/KaninbankerSettingsPanel.cs",
+                "Assets/Kaninbanker/Scripts/KaninbankerTutorial.cs",
                 "Assets/Kaninbanker/Scripts/KaninbankerPerformanceGovernor.cs"
             };
 
