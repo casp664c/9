@@ -5,51 +5,66 @@ namespace Kaninbanker
 {
     public sealed class KaninbankerGame : MonoBehaviour
     {
+        private const string HighScoreKey = "Kaninbanker.HighScore";
         private const float RoundLength = 30f;
-        private const float RabbitVisibleTime = 0.8f;
-        private const float BetweenRabbitsTime = 0.18f;
+        private const float BaseRabbitVisibleTime = 0.82f;
+        private const float MinimumRabbitVisibleTime = 0.38f;
+        private const float BaseBetweenRabbitsTime = 0.18f;
+        private const float MinimumBetweenRabbitsTime = 0.08f;
+        private const float ComboWindow = 1.35f;
 
         private readonly List<RabbitHole> holes = new List<RabbitHole>();
         private Camera gameplayCamera;
         private RabbitHole activeHole;
         private float roundTimeLeft;
         private float phaseTimeLeft;
+        private float comboTimeLeft;
         private int score;
+        private int highScore;
+        private int combo;
+        private int hits;
+        private int misses;
         private bool running;
         private GUIStyle titleStyle;
         private GUIStyle hudStyle;
+        private GUIStyle smallStyle;
         private GUIStyle buttonStyle;
 
         public int Score => score;
+        public int HighScore => highScore;
         public float TimeLeft => roundTimeLeft;
         public bool IsRunning => running;
 
         private void Awake()
         {
+            highScore = PlayerPrefs.GetInt(HighScoreKey, 0);
             BuildRuntimeScene();
             StartRound();
         }
 
         private void Update()
         {
-            if (running)
-            {
-                roundTimeLeft = Mathf.Max(0f, roundTimeLeft - Time.deltaTime);
-                if (roundTimeLeft <= 0f)
-                {
-                    running = false;
-                    HideActiveRabbit();
-                    return;
-                }
+            if (!running)
+                return;
 
-                phaseTimeLeft -= Time.deltaTime;
-                if (phaseTimeLeft <= 0f)
-                {
-                    if (activeHole == null)
-                        ShowRandomRabbit();
-                    else
-                        HideActiveRabbit();
-                }
+            roundTimeLeft = Mathf.Max(0f, roundTimeLeft - Time.deltaTime);
+            comboTimeLeft = Mathf.Max(0f, comboTimeLeft - Time.deltaTime);
+            if (comboTimeLeft <= 0f)
+                combo = 0;
+
+            if (roundTimeLeft <= 0f)
+            {
+                FinishRound();
+                return;
+            }
+
+            phaseTimeLeft -= Time.deltaTime;
+            if (phaseTimeLeft <= 0f)
+            {
+                if (activeHole == null)
+                    ShowRandomRabbit();
+                else
+                    HideActiveRabbit(true);
             }
 
             ReadPointerInput();
@@ -58,11 +73,31 @@ namespace Kaninbanker
         public void StartRound()
         {
             score = 0;
+            combo = 0;
+            hits = 0;
+            misses = 0;
+            comboTimeLeft = 0f;
             roundTimeLeft = RoundLength;
             running = true;
             HideAllRabbits();
             phaseTimeLeft = 0.25f;
         }
+
+        private void FinishRound()
+        {
+            running = false;
+            HideActiveRabbit(false);
+            if (score > highScore)
+            {
+                highScore = score;
+                PlayerPrefs.SetInt(HighScoreKey, highScore);
+                PlayerPrefs.Save();
+            }
+        }
+
+        private float Difficulty01 => Mathf.Clamp01((RoundLength - roundTimeLeft) / RoundLength);
+        private float RabbitVisibleTime => Mathf.Lerp(BaseRabbitVisibleTime, MinimumRabbitVisibleTime, Difficulty01);
+        private float BetweenRabbitsTime => Mathf.Lerp(BaseBetweenRabbitsTime, MinimumBetweenRabbitsTime, Difficulty01);
 
         private void BuildRuntimeScene()
         {
@@ -162,8 +197,12 @@ namespace Kaninbanker
             var renderer = gameObject.GetComponent<Renderer>();
             if (renderer == null)
                 return;
-            var material = new Material(Shader.Find("Standard"));
-            material.color = color;
+
+            Shader shader = Shader.Find("Standard") ?? Shader.Find("Sprites/Default");
+            if (shader == null)
+                return;
+
+            var material = new Material(shader) { color = color };
             renderer.sharedMaterial = material;
         }
 
@@ -171,15 +210,25 @@ namespace Kaninbanker
         {
             if (holes.Count == 0)
                 return;
+
             activeHole = holes[Random.Range(0, holes.Count)];
             activeHole.RabbitObject.SetActive(true);
             phaseTimeLeft = RabbitVisibleTime;
         }
 
-        private void HideActiveRabbit()
+        private void HideActiveRabbit(bool countMiss)
         {
             if (activeHole != null && activeHole.RabbitObject != null)
+            {
                 activeHole.RabbitObject.SetActive(false);
+                if (countMiss)
+                {
+                    misses++;
+                    combo = 0;
+                    comboTimeLeft = 0f;
+                }
+            }
+
             activeHole = null;
             phaseTimeLeft = BetweenRabbitsTime;
         }
@@ -196,7 +245,7 @@ namespace Kaninbanker
 
         private void ReadPointerInput()
         {
-            if (!running || gameplayCamera == null)
+            if (gameplayCamera == null)
                 return;
 
             if (Input.touchCount > 0)
@@ -221,26 +270,50 @@ namespace Kaninbanker
             if (target == null || activeHole == null || target.Hole != activeHole || !activeHole.RabbitObject.activeSelf)
                 return;
 
-            score++;
-            HideActiveRabbit();
+            combo = comboTimeLeft > 0f ? combo + 1 : 1;
+            comboTimeLeft = ComboWindow;
+            score += Mathf.Min(combo, 5);
+            hits++;
+
+#if UNITY_ANDROID && !UNITY_EDITOR
+            Handheld.Vibrate();
+#endif
+
+            if (score > highScore)
+                highScore = score;
+
+            HideActiveRabbit(false);
         }
 
         private void OnGUI()
         {
             EnsureStyles();
-            float margin = Mathf.Max(18f, Screen.width * 0.035f);
-            float lineHeight = Mathf.Max(42f, Screen.height * 0.065f);
+            Rect safe = Screen.safeArea;
+            float margin = Mathf.Max(18f, safe.width * 0.025f);
+            float lineHeight = Mathf.Max(42f, safe.height * 0.065f);
+            float left = safe.x + margin;
+            float top = Screen.height - safe.yMax + margin;
+            float width = safe.width - margin * 2f;
 
-            GUI.Box(new Rect(margin, margin, Screen.width - margin * 2f, lineHeight * 2.25f), GUIContent.none);
-            GUI.Label(new Rect(margin, margin, Screen.width - margin * 2f, lineHeight), "KANINBANKER", titleStyle);
-            GUI.Label(new Rect(margin * 1.6f, margin + lineHeight, Screen.width * 0.45f, lineHeight), "Score: " + score, hudStyle);
-            GUI.Label(new Rect(Screen.width * 0.58f, margin + lineHeight, Screen.width * 0.35f, lineHeight), "Tid: " + Mathf.CeilToInt(roundTimeLeft), hudStyle);
+            GUI.Box(new Rect(left, top, width, lineHeight * 2.6f), GUIContent.none);
+            GUI.Label(new Rect(left, top, width, lineHeight), "KANINBANKER", titleStyle);
+            GUI.Label(new Rect(left + margin, top + lineHeight, width * 0.32f, lineHeight), "Score: " + score, hudStyle);
+            GUI.Label(new Rect(left + width * 0.38f, top + lineHeight, width * 0.25f, lineHeight), "Tid: " + Mathf.CeilToInt(roundTimeLeft), hudStyle);
+            GUI.Label(new Rect(left + width * 0.68f, top + lineHeight, width * 0.28f, lineHeight), combo > 1 ? "Combo x" + combo : "", hudStyle);
 
             if (!running)
             {
-                float width = Screen.width * 0.58f;
-                float height = Mathf.Max(64f, Screen.height * 0.09f);
-                var buttonRect = new Rect((Screen.width - width) * 0.5f, Screen.height * 0.78f, width, height);
+                float panelWidth = safe.width * 0.62f;
+                float panelHeight = Mathf.Max(160f, safe.height * 0.28f);
+                float panelX = safe.x + (safe.width - panelWidth) * 0.5f;
+                float panelY = Screen.height - safe.yMax + safe.height * 0.42f;
+                GUI.Box(new Rect(panelX, panelY, panelWidth, panelHeight), GUIContent.none);
+                GUI.Label(new Rect(panelX, panelY + 8f, panelWidth, lineHeight), "Runden er slut", titleStyle);
+                GUI.Label(new Rect(panelX + margin, panelY + lineHeight, panelWidth - margin * 2f, lineHeight), $"Score {score}   Rekord {highScore}", hudStyle);
+                GUI.Label(new Rect(panelX + margin, panelY + lineHeight * 1.65f, panelWidth - margin * 2f, lineHeight), $"Træffere {hits}   Miss {misses}", smallStyle);
+
+                float buttonHeight = Mathf.Max(58f, safe.height * 0.085f);
+                var buttonRect = new Rect(panelX + margin, panelY + panelHeight - buttonHeight - margin, panelWidth - margin * 2f, buttonHeight);
                 if (GUI.Button(buttonRect, "Spil igen", buttonStyle))
                     StartRound();
             }
@@ -260,7 +333,13 @@ namespace Kaninbanker
             hudStyle = new GUIStyle(GUI.skin.label)
             {
                 fontSize = Mathf.Max(20, Screen.height / 32),
-                fontStyle = FontStyle.Bold
+                fontStyle = FontStyle.Bold,
+                alignment = TextAnchor.MiddleLeft
+            };
+            smallStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = Mathf.Max(16, Screen.height / 42),
+                alignment = TextAnchor.MiddleCenter
             };
             buttonStyle = new GUIStyle(GUI.skin.button)
             {
