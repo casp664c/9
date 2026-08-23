@@ -1,22 +1,33 @@
-# Official Unity asset/sample sources for Kaninbanker
+# Official Unity website/content sources for Kaninbanker
 
 Kaninbanker is TRUE 2D and Android portrait-first. Prefer official Unity Technologies sources and official Unity Package Manager samples before third-party assets.
 
+## What "use everything from Unity" means safely
+
+Unity.com is not one downloadable asset archive. It contains the engine, documentation, tutorials, services, samples, Asset Store products, 2D/3D/XR/industry content, paid products and account-gated downloads. Kaninbanker therefore uses an **official-content intake policy**:
+
+- automatically discover all loaded official `com.unity.*` packages;
+- automatically import every non-interactive sample exposed by installed TRUE-2D `com.unity.2d.*` packages;
+- scan imported project assets for compatible sprites and audio;
+- register official Unity-owned web/sample sources in the project;
+- keep 3D/HDRP/XR/industry content out of the production runtime unless explicitly reviewed for a 2D use case;
+- never bypass Asset Store account ownership or license acceptance;
+- never bulk-copy licensed raw Asset Store packages into the public GitHub repository.
+
 ## Automatic Unity-owned package discovery
 
-`KaninbankerOfficialUnitySamples` now calls Unity's official `PackageInfo.GetAllRegisteredPackages()` API. Every currently loaded package whose name starts with `com.unity.` is discovered automatically.
+`KaninbankerOfficialUnitySamples` calls Unity's official `PackageInfo.GetAllRegisteredPackages()` API. Every currently loaded package whose name starts with `com.unity.` is discovered automatically.
 
-Cloud Build then applies a safety rule:
+Cloud Build then applies these rules:
 
-- every installed `com.unity.*` package is discovered and reported;
-- every installed `com.unity.2d.*` package is eligible for automatic non-interactive sample import;
-- 3D/HDRP/XR/Multiplayer/Industry packages are discovery-only and are not auto-imported into Kaninbanker's production build;
-- interactive package samples are skipped in batch/cloud mode;
-- already-imported samples are not duplicated;
-- all imported package samples are copied by Unity under `Assets/Samples/...`;
-- `Kaninbanker2DAssetCatalogBuilder` runs afterwards and indexes compatible Sprites and AudioClips.
+- all installed `com.unity.*` packages are discovered and reported;
+- installed `com.unity.2d.*` packages are eligible for automatic non-interactive sample import;
+- interactive samples are skipped in batch/cloud mode;
+- already imported samples are not duplicated;
+- Unity copies imported package samples under `Assets/Samples/...`;
+- `Kaninbanker2DAssetCatalogBuilder` runs afterwards and indexes compatible `Sprite` and `AudioClip` assets.
 
-This means newly installed official Unity 2D packages can participate without another hardcoded package-list edit.
+New official Unity 2D packages can therefore participate without another hardcoded package-list edit.
 
 ## Explicitly installed official Unity 2D toolset
 
@@ -35,17 +46,27 @@ The project currently pins/includes:
 
 The game asset catalog can classify compatible imported content as rabbits, bosses, bombs, holes, backgrounds, foregrounds, FX, UI, hammers, music, hit/combo/miss/power/boss/bomb/reward SFX and generic fallback content.
 
+## Canonical Unity website surfaces reviewed
+
+These official Unity-owned pages are treated as the primary discovery layer for future Kaninbanker content:
+
+- Unity home: https://www.unity.com
+- Unity 2D: https://unity.com/features/2d
+- Unity 6 Resources Hub: https://unity.com/campaign/unity-6-resources
+- Unity 2D Asset Store: https://assetstore.unity.com/2d
+- Unity Technologies Asset Store publisher: https://assetstore.unity.com/publishers/1
+- Unity Learn - Create a 2D game: https://learn.unity.com/collection/create-a-2d-game
+- Unity Learn - 2D Game Kit: https://learn.unity.com/project/2d-game-kit
+- Unity Manual - Set up a project for 2D games: https://docs.unity3d.com/6000.3/Documentation/Manual/setup-project-2d-game.html
+- Unity Package Manager Sample API: https://docs.unity3d.com/6000.0/Documentation/ScriptReference/PackageManager.UI.Sample.html
+
+Unity's own 2D documentation describes the 2D suite as covering worldbuilding, characters, graphics, physics and more. The Unity 6 Resources Hub groups documentation, best-practice guides, samples, tutorials and assets.
+
 ## Machine-readable official Unity web registry
 
 `Assets/Kaninbanker/Editor/KaninbankerUnityOfficialSourceRegistry.cs` is part of every Cloud Build. It records canonical Unity-owned hubs and known official sample sources, and logs whether each source is public or requires Asset Store account/license acquisition.
 
-Canonical hubs:
-
-- Unity 2D: https://unity.com/features/2d
-- Unity 6 Resources Hub: https://unity.com/campaign/unity-6-resources
-- Unity Technologies Asset Store publisher: https://assetstore.unity.com/publishers/1
-
-Known official 2D/UI sources:
+Known official 2D/UI sources include:
 
 1. **Lost Crypt - 2D Sample Project** — Unity Technologies
    - https://assetstore.unity.com/packages/essentials/tutorial-projects/lost-crypt-2d-sample-project-158673
@@ -68,23 +89,21 @@ Known official 2D/UI sources:
 
 ## Important Asset Store boundary
 
-Unity's website is not one downloadable asset bundle. It contains engine downloads, documentation, tutorials, services, 2D/3D content, Asset Store products, paid products and account-gated packages.
-
-Asset Store products must legitimately be added to the project owner's Unity account / `My Assets` and accepted under their applicable license before Unity permits download/import. Kaninbanker does not bypass that step and does not copy licensed raw Asset Store packages into a public repository merely to inflate project size.
+Unity Asset Store products must legitimately be added to the project owner's Unity account / `My Assets` and accepted under their applicable license before Unity permits download/import. Kaninbanker does not bypass that step.
 
 Once an acquired asset is actually present under `Assets/`, the Kaninbanker catalog automatically scans and uses compatible 2D sprites/audio without requiring the core gameplay architecture to be rewritten.
 
-## Intake rule
+## Intake rule for every new Unity-owned asset
 
-For every licensed Unity asset actually acquired:
-
-1. verify its license and redistribution constraints;
-2. import it through Unity into `Assets/`;
-3. keep game-facing production art TRUE 2D;
-4. allow the automatic catalog to classify sprites/audio;
-5. add useful category naming when needed (`rabbit`, `boss`, `bomb`, `hole`, `background`, `foreground`, `fx`, `ui`, `hammer`, `music`, `hit`, `combo`, `miss`, `power`, `reward`);
-6. run all GitHub audits;
-7. run a fresh Unity Android Cloud Build;
-8. test on a portrait Android device.
+1. verify that the source is official Unity/Unity Technologies or intentionally approved;
+2. verify its license and redistribution constraints;
+3. acquire it through the supported Unity/Asset Store/Package Manager flow;
+4. import it into `Assets/`;
+5. keep game-facing production art TRUE 2D;
+6. allow the automatic catalog to classify sprites/audio;
+7. add useful category naming when needed (`rabbit`, `boss`, `bomb`, `hole`, `background`, `foreground`, `fx`, `ui`, `hammer`, `music`, `hit`, `combo`, `miss`, `power`, `reward`);
+8. run the TRUE-2D source audit, asset-pipeline audit and official Unity sample audit;
+9. run a fresh Unity Android Cloud Build;
+10. test on a portrait Android device.
 
 The target is a very large production game, but size must come from useful, licensed content and systems rather than unreferenced files, incompatible 3D samples or prohibited redistribution.
