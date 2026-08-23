@@ -11,9 +11,12 @@ This branch now treats 2D as a hard production requirement, not a camera trick.
 - Rabbits and holes are composed from runtime-generated 2D sprites.
 - Touch hit testing uses `CircleCollider2D` + `Physics2D.OverlapPoint`.
 - Hit feedback and arena atmosphere use flat sprites.
-- No 3D primitive creation, 3D raycasts or directional lights are allowed inside the true-2D gameplay runtime.
+- No 3D primitive creation, 3D raycasts or directional lights are allowed inside the gameplay runtime.
 - Unity Editor Default Behavior Mode is forced to 2D before Cloud Build.
-- `com.unity.modules.physics2d` is required by preflight.
+- The Main scene is regenerated for every build so a stale cached 3D scene cannot be reused.
+- The legacy `KaninbankerGame.cs` 3D runtime has been deleted.
+- `com.unity.modules.physics` and `com.unity.modules.particlesystem` have been removed from the project manifest.
+- `com.unity.modules.physics2d` is the gameplay physics module required by preflight.
 
 ## Preserved game scale
 
@@ -41,4 +44,4 @@ The 2D migration keeps the large portrait game direction:
 5. the true-2D runtime contains orthographic/SpriteRenderer/Collider2D/Physics2D markers;
 6. executable 3D primitive/raycast/directional-light calls have not leaked into the new runtime.
 
-The legacy `KaninbankerGame.cs` remains in source temporarily as migration history/compatibility code, but the generated Android scene no longer attaches it. All new runtime gameplay work should target `KaninbankerGame2D.cs`.
+All future runtime gameplay work must target `KaninbankerGame2D.cs`. Reintroducing the deleted 3D runtime is a regression.
