@@ -3,12 +3,11 @@ using UnityEngine;
 namespace Kaninbanker
 {
     /// <summary>
-    /// First-run portrait tutorial. It explains the expanded rules without blocking active rounds
-    /// and can be reopened from the lobby/results screen.
+    /// First-run portrait tutorial for the true-2D game.
     /// </summary>
     public sealed class KaninbankerTutorial : MonoBehaviour
     {
-        private const string SeenKey = "Kaninbanker.Tutorial.SeenV1";
+        private const string SeenKey = "Kaninbanker.Tutorial.SeenV2D";
 
         private static readonly string[] Titles =
         {
@@ -20,13 +19,13 @@ namespace Kaninbanker
 
         private static readonly string[] Bodies =
         {
-            "Tryk direkte på den kanin der popper op. Hold comboen i live for større score. Arenaen er bygget til telefon på højkant med 15 huller.",
-            "Guld giver store point. Pansrede kræver flere slag. Bomber skal normalt undgås. Boss-kaniner har flere liv og bliver på banen længere.",
+            "Tryk direkte på den 2D-kanin der popper op. Hold comboen i live for større score. Arenaen er ægte flad 2D med 15 huller på telefonen i højkant.",
+            "Guld giver store point. Pansrede kræver flere slag. Bomber skal normalt undgås. Boss-kaniner har flere liv og bliver længere på den flade 2D-bane.",
             "SLOW giver mere reaktionstid. x2 fordobler score. SKJOLD beskytter mod fejl og bomber. FRENZY gør runden hurtigere og mere eksplosiv.",
-            "Spil events, Mayhem Pass og daglige missioner. Saml medaljer, trofæer, levels og collection-unlocks i Karriere-bogen."
+            "Spil events, World Tour og Mayhem Pass. Saml medaljer, trofæer, levels og collection-unlocks i Karriere-bogen."
         };
 
-        private KaninbankerGame game;
+        private KaninbankerGame2D game;
         private bool open;
         private int page;
         private GUIStyle titleStyle;
@@ -47,14 +46,14 @@ namespace Kaninbanker
 
         private void Start()
         {
-            game = FindFirstObjectByType<KaninbankerGame>();
+            game = FindFirstObjectByType<KaninbankerGame2D>();
             open = PlayerPrefs.GetInt(SeenKey, 0) == 0;
         }
 
         private void Update()
         {
             if (game == null)
-                game = FindFirstObjectByType<KaninbankerGame>();
+                game = FindFirstObjectByType<KaninbankerGame2D>();
         }
 
         private void CloseTutorial()
@@ -79,7 +78,7 @@ namespace Kaninbanker
                 float w = Mathf.Min(safe.width * 0.26f, 190f);
                 float h = Mathf.Max(50f, safe.height * 0.052f);
                 Rect reopen = new Rect(safe.xMax - margin - w, safe.y + safe.height * 0.275f, w, h);
-                if (GUI.Button(reopen, "SÅDAN SPILLER DU", buttonStyle))
+                if (GUI.Button(reopen, "2D GUIDE", buttonStyle))
                 {
                     page = 0;
                     open = true;
@@ -99,7 +98,7 @@ namespace Kaninbanker
                 page == 3 ? new Color(0.25f, 0.16f, 0.04f, 0.96f) :
                 new Color(0.04f, 0.18f, 0.25f, 0.96f));
 
-            string icon = page == 0 ? "🔨  🐇  🔨" : page == 1 ? "🐇  💣  👑" : page == 2 ? "⏱  x2  🛡  ⚡" : "🏆  ⭐  🥇";
+            string icon = page == 0 ? "2D  🐇  2D" : page == 1 ? "🐇  💣  👑" : page == 2 ? "⏱  x2  🛡  ⚡" : "🏆  ⭐  🥇";
             GUI.Label(new Rect(panel.x + inner, panel.y + inner, panel.width - inner * 2f, heroH), icon, pageStyle);
 
             float y = panel.y + inner + heroH + panel.height * 0.045f;
@@ -114,22 +113,17 @@ namespace Kaninbanker
 
             if (page > 0)
             {
-                if (GUI.Button(new Rect(panel.x + inner, navY, half, navH), "TILBAGE", buttonStyle))
-                    page--;
+                if (GUI.Button(new Rect(panel.x + inner, navY, half, navH), "TILBAGE", buttonStyle)) page--;
             }
-            else
+            else if (GUI.Button(new Rect(panel.x + inner, navY, half, navH), "LUK", buttonStyle))
             {
-                if (GUI.Button(new Rect(panel.x + inner, navY, half, navH), "LUK", buttonStyle))
-                    CloseTutorial();
+                CloseTutorial();
             }
 
             string nextLabel = page >= Titles.Length - 1 ? "KLAR!" : "NÆSTE";
             if (GUI.Button(new Rect(panel.x + inner + half + gap, navY, half, navH), nextLabel, buttonStyle))
             {
-                if (page >= Titles.Length - 1)
-                    CloseTutorial();
-                else
-                    page++;
+                if (page >= Titles.Length - 1) CloseTutorial(); else page++;
             }
 
             GUI.Label(new Rect(panel.x + inner, navY - panel.height * 0.07f, panel.width - inner * 2f, panel.height * 0.05f),
@@ -146,42 +140,15 @@ namespace Kaninbanker
 
         private void EnsureStyles()
         {
-            if (titleStyle != null)
-                return;
-
+            if (titleStyle != null) return;
             int reference = Mathf.Min(Screen.width, Screen.height);
-            titleStyle = new GUIStyle(GUI.skin.label)
-            {
-                fontSize = Mathf.Clamp(reference / 14, 28, 60),
-                fontStyle = FontStyle.Bold,
-                alignment = TextAnchor.MiddleCenter,
-                wordWrap = true
-            };
+            titleStyle = new GUIStyle(GUI.skin.label) { fontSize = Mathf.Clamp(reference / 14, 28, 60), fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter, wordWrap = true };
             titleStyle.normal.textColor = Color.white;
-
-            bodyStyle = new GUIStyle(GUI.skin.label)
-            {
-                fontSize = Mathf.Clamp(reference / 26, 18, 36),
-                alignment = TextAnchor.MiddleCenter,
-                wordWrap = true
-            };
+            bodyStyle = new GUIStyle(GUI.skin.label) { fontSize = Mathf.Clamp(reference / 26, 18, 36), alignment = TextAnchor.MiddleCenter, wordWrap = true };
             bodyStyle.normal.textColor = new Color(0.90f, 0.92f, 0.98f);
-
-            pageStyle = new GUIStyle(GUI.skin.label)
-            {
-                fontSize = Mathf.Clamp(reference / 18, 24, 50),
-                fontStyle = FontStyle.Bold,
-                alignment = TextAnchor.MiddleCenter
-            };
+            pageStyle = new GUIStyle(GUI.skin.label) { fontSize = Mathf.Clamp(reference / 18, 24, 50), fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter };
             pageStyle.normal.textColor = Color.white;
-
-            buttonStyle = new GUIStyle(GUI.skin.button)
-            {
-                fontSize = Mathf.Clamp(reference / 34, 15, 28),
-                fontStyle = FontStyle.Bold,
-                alignment = TextAnchor.MiddleCenter,
-                wordWrap = true
-            };
+            buttonStyle = new GUIStyle(GUI.skin.button) { fontSize = Mathf.Clamp(reference / 34, 15, 28), fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter, wordWrap = true };
         }
     }
 }
