@@ -23,7 +23,7 @@ namespace Kaninbanker.Editor
             ValidateRequiredSource();
             ValidateModules();
             ValidateTrue2DSource();
-            Debug.Log("[Kaninbanker] PREFLIGHT PASS: TRUE 2D, portrait, scene, source set and Physics2D are ready.");
+            Debug.Log("[Kaninbanker] PREFLIGHT PASS: TRUE 2D only, portrait, scene, source set and Physics2D are ready.");
         }
 
         private static void ValidatePortrait()
@@ -76,12 +76,16 @@ namespace Kaninbanker.Editor
                 if (!File.Exists(required[i]))
                     throw new BuildFailedException("KANINBANKER PREFLIGHT: required source file missing: " + required[i]);
             }
+
+            if (File.Exists("Assets/Kaninbanker/Scripts/KaninbankerGame.cs"))
+                throw new BuildFailedException("KANINBANKER PREFLIGHT: legacy 3D KaninbankerGame.cs has returned. TRUE 2D build refused.");
         }
 
         private static void ValidateModules()
         {
             if (!File.Exists(ManifestPath))
                 throw new BuildFailedException("KANINBANKER PREFLIGHT: Packages/manifest.json is missing.");
+
             string manifest = File.ReadAllText(ManifestPath);
             string[] requiredModules =
             {
@@ -95,6 +99,17 @@ namespace Kaninbanker.Editor
                 if (!manifest.Contains(requiredModules[i]))
                     throw new BuildFailedException("KANINBANKER PREFLIGHT: required Unity module missing from manifest: " + requiredModules[i]);
             }
+
+            string[] forbidden3DModules =
+            {
+                "com.unity.modules.physics\"",
+                "com.unity.modules.particlesystem\""
+            };
+            for (int i = 0; i < forbidden3DModules.Length; i++)
+            {
+                if (manifest.Contains(forbidden3DModules[i]))
+                    throw new BuildFailedException("KANINBANKER PREFLIGHT: legacy 3D-oriented module found in TRUE 2D manifest: " + forbidden3DModules[i]);
+            }
         }
 
         private static void ValidateTrue2DSource()
@@ -107,7 +122,7 @@ namespace Kaninbanker.Editor
                     throw new BuildFailedException("KANINBANKER PREFLIGHT: TRUE 2D marker missing: " + required2D[i]);
             }
 
-            string[] forbidden3D = { "GameObject.CreatePrimitive(", "Physics.Raycast(", "LightType.Directional" };
+            string[] forbidden3D = { "GameObject.CreatePrimitive(", "Physics.Raycast(", "LightType.Directional", "LightType.Point" };
             for (int i = 0; i < forbidden3D.Length; i++)
             {
                 if (source.Contains(forbidden3D[i]))
