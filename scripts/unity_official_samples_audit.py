@@ -14,7 +14,9 @@ REQUIRED_PACKAGES = [
     "com.unity.2d.aseprite",
     "com.unity.2d.pixel-perfect",
     "com.unity.2d.psdimporter",
+    "com.unity.2d.sprite",
     "com.unity.2d.spriteshape",
+    "com.unity.2d.tilemap",
     "com.unity.2d.tilemap.extras",
 ]
 
