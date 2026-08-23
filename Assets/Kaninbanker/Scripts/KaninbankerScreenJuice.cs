@@ -8,7 +8,7 @@ namespace Kaninbanker
     /// </summary>
     public sealed class KaninbankerScreenJuice : MonoBehaviour
     {
-        private KaninbankerGame game;
+        private KaninbankerGame2D game;
         private int lastScore;
         private bool wasRunning;
         private float flash;
@@ -30,7 +30,7 @@ namespace Kaninbanker
 
         private void Start()
         {
-            game = FindFirstObjectByType<KaninbankerGame>();
+            game = FindFirstObjectByType<KaninbankerGame2D>();
             if (game != null)
             {
                 lastScore = game.Score;
@@ -42,7 +42,7 @@ namespace Kaninbanker
         {
             if (game == null)
             {
-                game = FindFirstObjectByType<KaninbankerGame>();
+                game = FindFirstObjectByType<KaninbankerGame2D>();
                 return;
             }
 
