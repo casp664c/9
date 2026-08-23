@@ -22,10 +22,6 @@ namespace Kaninbanker.Editor
 
         public int callbackOrder => -1000;
 
-        // Do not perform AssetDatabase/scene work directly in an InitializeOnLoad constructor.
-        // Unity invokes it before asset importing is guaranteed to be complete. The companion
-        // AssetPostprocessor performs the primary bootstrap after the domain reload; this update
-        // callback is a one-shot fallback for unusual batch-mode startup ordering.
         static KaninbankerCloudBootstrap()
         {
             EditorApplication.update += PrepareOnFirstEditorUpdate;
@@ -74,10 +70,11 @@ namespace Kaninbanker.Editor
                                    EditorBuildSettings.scenes[0].enabled &&
                                    EditorBuildSettings.scenes[0].path == ScenePath;
             bool settingsOk = PlayerSettings.productName == ProductName &&
-                              PlayerSettings.GetApplicationIdentifier(NamedBuildTarget.Android) == ApplicationIdentifier;
+                              PlayerSettings.GetApplicationIdentifier(NamedBuildTarget.Android) == ApplicationIdentifier &&
+                              PlayerSettings.defaultInterfaceOrientation == UIOrientation.Portrait;
 
             if (sceneExists && sceneConfigured && settingsOk)
-                Debug.Log("[Kaninbanker] SELF CHECK: PASS");
+                Debug.Log("[Kaninbanker] SELF CHECK: PASS - Android portrait configuration is ready.");
             else
                 Debug.LogError($"[Kaninbanker] SELF CHECK: FAIL sceneExists={sceneExists} sceneConfigured={sceneConfigured} settingsOk={settingsOk}");
         }
@@ -86,13 +83,19 @@ namespace Kaninbanker.Editor
         {
             PlayerSettings.companyName = "casp664c";
             PlayerSettings.productName = ProductName;
-            PlayerSettings.bundleVersion = "0.1.0";
+            PlayerSettings.bundleVersion = "0.2.0";
             PlayerSettings.SetApplicationIdentifier(NamedBuildTarget.Android, ApplicationIdentifier);
-            PlayerSettings.Android.bundleVersionCode = 1;
+            PlayerSettings.Android.bundleVersionCode = 2;
             PlayerSettings.Android.minSdkVersion = AndroidSdkVersions.AndroidApiLevel26;
             PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
             PlayerSettings.SetScriptingBackend(NamedBuildTarget.Android, ScriptingImplementation.IL2CPP);
-            PlayerSettings.defaultInterfaceOrientation = UIOrientation.LandscapeLeft;
+
+            // Portrait-only, phone-first presentation (TikTok/Reels-style vertical layout).
+            PlayerSettings.defaultInterfaceOrientation = UIOrientation.Portrait;
+            PlayerSettings.allowedAutorotateToPortrait = true;
+            PlayerSettings.allowedAutorotateToPortraitUpsideDown = false;
+            PlayerSettings.allowedAutorotateToLandscapeLeft = false;
+            PlayerSettings.allowedAutorotateToLandscapeRight = false;
 
             // Keep external audio (for example YouTube Music) alive while Kaninbanker is foregrounded.
             PlayerSettings.muteOtherAudioSources = false;
