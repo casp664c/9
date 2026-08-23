@@ -57,6 +57,7 @@ namespace Kaninbanker.Editor
             ConfigureEditorFor2D();
             ConfigurePlayerSettings();
             ConfigureLegacyInput();
+            Kaninbanker2DAssetCatalogBuilder.BuildCatalog();
             RegenerateTrue2DScene();
             EnsureBuildSettings();
             AssetDatabase.SaveAssets();
@@ -70,6 +71,7 @@ namespace Kaninbanker.Editor
                                    EditorBuildSettings.scenes.Length > 0 &&
                                    EditorBuildSettings.scenes[0].enabled &&
                                    EditorBuildSettings.scenes[0].path == ScenePath;
+            bool catalogExists = AssetDatabase.LoadAssetAtPath<global::Kaninbanker.Kaninbanker2DAssetCatalog>(Kaninbanker2DAssetCatalogBuilder.CatalogPath) != null;
             bool settingsOk = PlayerSettings.productName == ProductName &&
                               PlayerSettings.GetApplicationIdentifier(NamedBuildTarget.Android) == ApplicationIdentifier &&
                               PlayerSettings.defaultInterfaceOrientation == UIOrientation.Portrait &&
@@ -77,10 +79,10 @@ namespace Kaninbanker.Editor
                               !PlayerSettings.allowedAutorotateToLandscapeRight &&
                               EditorSettings.defaultBehaviorMode == EditorBehaviorMode.Mode2D;
 
-            if (sceneExists && sceneConfigured && settingsOk)
-                Debug.Log("[Kaninbanker] SELF CHECK: PASS - FULL TRUE 2D + Android portrait configuration is ready.");
+            if (sceneExists && sceneConfigured && catalogExists && settingsOk)
+                Debug.Log("[Kaninbanker] SELF CHECK: PASS - FULL TRUE 2D + asset catalog + Android portrait configuration is ready.");
             else
-                Debug.LogError($"[Kaninbanker] SELF CHECK: FAIL sceneExists={sceneExists} sceneConfigured={sceneConfigured} settingsOk={settingsOk}");
+                Debug.LogError($"[Kaninbanker] SELF CHECK: FAIL sceneExists={sceneExists} sceneConfigured={sceneConfigured} catalogExists={catalogExists} settingsOk={settingsOk}");
         }
 
         private static void ConfigureEditorFor2D()
