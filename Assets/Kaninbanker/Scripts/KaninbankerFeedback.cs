@@ -4,7 +4,7 @@ namespace Kaninbanker
 {
     /// <summary>
     /// True-2D hit feedback. Uses only SpriteRenderer objects plus orthographic camera shake.
-    /// No ParticleSystem, meshes, 3D primitives, lights, materials or 3D physics are required.
+    /// Imported effect sprites are preferred; procedural circles remain the fallback.
     /// </summary>
     public sealed class KaninbankerFeedback : MonoBehaviour
     {
@@ -108,6 +108,7 @@ namespace Kaninbanker
             if (bursts != null && bursts.Length == BurstPoolSize)
                 return;
 
+            Kaninbanker2DAssetCatalog catalog = Kaninbanker2DAssetCatalog.Load();
             bursts = new SpriteRenderer[BurstPoolSize];
             burstTimes = new float[BurstPoolSize];
             burstDurations = new float[BurstPoolSize];
@@ -116,7 +117,8 @@ namespace Kaninbanker
                 GameObject go = new GameObject("Feedback2D_" + i.ToString("00"));
                 go.transform.SetParent(transform, false);
                 SpriteRenderer sr = go.AddComponent<SpriteRenderer>();
-                sr.sprite = Kaninbanker2DArt.Circle;
+                Sprite imported = catalog != null ? catalog.PickEffect(i * 17 + 5) : null;
+                sr.sprite = imported != null ? imported : Kaninbanker2DArt.Circle;
                 sr.sortingOrder = 40;
                 go.SetActive(false);
                 bursts[i] = sr;
