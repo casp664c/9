@@ -5,6 +5,7 @@ namespace Kaninbanker
     /// <summary>
     /// Pure 2D hammer overlay for tap feedback. Imported hammer sprites from the generated
     /// asset catalog are preferred; procedural SpriteRenderer geometry remains the fallback.
+    /// The selected Hammer Collection skin is applied live without restarting the round.
     /// </summary>
     public sealed class KaninbankerHammer2D : MonoBehaviour
     {
@@ -17,6 +18,7 @@ namespace Kaninbanker
         private float swingTime;
         private Vector3 targetWorld;
         private bool reducedFx;
+        private int currentSkin = -1;
 
         private const float SwingDuration = 0.18f;
 
@@ -35,6 +37,7 @@ namespace Kaninbanker
         {
             Resolve();
             BuildHammer();
+            RefreshSkin(true);
         }
 
         private void Update()
@@ -46,6 +49,7 @@ namespace Kaninbanker
                 return;
 
             reducedFx = PlayerPrefs.GetInt(KaninbankerSettingsPanel.ReducedFxKey, 0) != 0;
+            RefreshSkin(false);
 
             if (game.IsRunning)
                 ReadTap();
@@ -74,7 +78,6 @@ namespace Kaninbanker
             handleGo.transform.localScale = new Vector3(0.20f, 1.45f, 1f);
             handle = handleGo.AddComponent<SpriteRenderer>();
             handle.sprite = Kaninbanker2DArt.Square;
-            handle.color = new Color(0.38f, 0.18f, 0.07f, 0.98f);
             handle.sortingOrder = 90;
 
             GameObject headGo = new GameObject("Hammer2D_Head");
@@ -83,26 +86,71 @@ namespace Kaninbanker
             headGo.transform.localScale = new Vector3(1.20f, 0.52f, 1f);
             head = headGo.AddComponent<SpriteRenderer>();
             head.sprite = Kaninbanker2DArt.Square;
-            head.color = new Color(1f, 0.72f, 0.10f, 0.98f);
             head.sortingOrder = 91;
 
+            GameObject importedGo = new GameObject("Hammer2D_ImportedArt");
+            importedGo.transform.SetParent(hammerRoot, false);
+            importedGo.transform.localPosition = Vector3.zero;
+            importedHammer = importedGo.AddComponent<SpriteRenderer>();
+            importedHammer.sortingOrder = 92;
+            importedHammer.color = Color.white;
+            importedHammer.enabled = false;
+
+            hammerRoot.gameObject.SetActive(false);
+        }
+
+        private void RefreshSkin(bool force)
+        {
+            int selected = KaninbankerHammerCollection.SelectedIndex;
+            if (!force && selected == currentSkin)
+                return;
+
+            currentSkin = selected;
             Kaninbanker2DAssetCatalog catalog = Kaninbanker2DAssetCatalog.Load();
-            Sprite sprite = catalog != null ? catalog.PickHammer(71) : null;
-            if (sprite != null)
+            Sprite imported = catalog != null ? catalog.PickHammer(selected) : null;
+
+            if (imported != null)
             {
-                GameObject importedGo = new GameObject("Hammer2D_ImportedArt");
-                importedGo.transform.SetParent(hammerRoot, false);
-                importedGo.transform.localPosition = Vector3.zero;
-                importedHammer = importedGo.AddComponent<SpriteRenderer>();
-                importedHammer.sprite = sprite;
-                importedHammer.color = Color.white;
-                importedHammer.sortingOrder = 92;
-                ScaleToHeight(importedHammer, 2.0f);
+                importedHammer.sprite = imported;
+                importedHammer.enabled = true;
+                ScaleToHeight(importedHammer, 2.0f + (selected % 3) * 0.08f);
                 handle.enabled = false;
                 head.enabled = false;
             }
+            else
+            {
+                importedHammer.sprite = null;
+                importedHammer.enabled = false;
+                handle.enabled = true;
+                head.enabled = true;
+                ApplyFallbackPalette(selected);
+            }
+        }
 
-            hammerRoot.gameObject.SetActive(false);
+        private void ApplyFallbackPalette(int skin)
+        {
+            Color handleColor;
+            Color headColor;
+            switch (skin)
+            {
+                case 1: handleColor = new Color(0.12f, 0.16f, 0.32f); headColor = new Color(0.15f, 0.95f, 1f); break;
+                case 2: handleColor = new Color(0.45f, 0.24f, 0.03f); headColor = new Color(1f, 0.78f, 0.08f); break;
+                case 3: handleColor = new Color(0.74f, 0.30f, 0.58f); headColor = new Color(1f, 0.55f, 0.82f); break;
+                case 4: handleColor = new Color(0.28f, 0.08f, 0.03f); headColor = new Color(1f, 0.24f, 0.04f); break;
+                case 5: handleColor = new Color(0.12f, 0.30f, 0.42f); headColor = new Color(0.52f, 0.90f, 1f); break;
+                case 6: handleColor = new Color(0.12f, 0.04f, 0.24f); headColor = new Color(0.70f, 0.34f, 1f); break;
+                case 7: handleColor = new Color(0.32f, 0.08f, 0.08f); headColor = new Color(1f, 0.18f, 0.18f); break;
+                case 8: handleColor = new Color(0.08f, 0.26f, 0.20f); headColor = new Color(0.18f, 1f, 0.56f); break;
+                case 9: handleColor = new Color(0.38f, 0.20f, 0.48f); headColor = new Color(0.95f, 0.74f, 1f); break;
+                case 10: handleColor = new Color(0.02f, 0.02f, 0.05f); headColor = new Color(0.42f, 0.18f, 0.78f); break;
+                case 11: handleColor = new Color(0.46f, 0.22f, 0.02f); headColor = new Color(1f, 0.92f, 0.28f); break;
+                default: handleColor = new Color(0.38f, 0.18f, 0.07f); headColor = new Color(1f, 0.72f, 0.10f); break;
+            }
+
+            handle.color = handleColor;
+            head.color = headColor;
+            float widthBoost = 1f + (skin % 4) * 0.05f;
+            head.transform.localScale = new Vector3(1.20f * widthBoost, 0.52f, 1f);
         }
 
         private static void ScaleToHeight(SpriteRenderer renderer, float height)
