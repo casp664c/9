@@ -7,8 +7,9 @@ using UnityEngine;
 namespace Kaninbanker.Editor
 {
     /// <summary>
-    /// Keeps the official Unity Package Manager sample-import pipeline wired into every cloud build.
-    /// This validator does not require an Asset Store login and does not bypass license acceptance.
+    /// Keeps the automatic official Unity Package Manager sample-import pipeline wired into every cloud build.
+    /// All installed com.unity.* packages are discovered; only TRUE-2D-safe com.unity.2d.* package samples are
+    /// imported automatically. Asset Store account/license gates are never bypassed.
     /// </summary>
     public sealed class KaninbankerOfficialUnitySamplesValidator : IPreprocessBuildWithReport
     {
@@ -22,9 +23,28 @@ namespace Kaninbanker.Editor
         {
             if (!File.Exists(ImporterPath))
                 throw new BuildFailedException("KANINBANKER UNITY-SAMPLES: official Unity sample importer is missing.");
-
             if (!File.Exists(BootstrapPath))
                 throw new BuildFailedException("KANINBANKER UNITY-SAMPLES: Cloud Bootstrap is missing.");
+            if (!File.Exists(ManifestPath))
+                throw new BuildFailedException("KANINBANKER UNITY-SAMPLES: Packages/manifest.json is missing.");
+
+            string importer = File.ReadAllText(ImporterPath);
+            string[] discoveryMarkers =
+            {
+                "PackageInfo.GetAllRegisteredPackages()",
+                "package.name.StartsWith(\"com.unity.\"",
+                "packageName.StartsWith(\"com.unity.2d.\"",
+                "Sample.FindByPackage",
+                "Sample.ImportOptions.OverridePreviousImports",
+                "sample.interactiveImport",
+                "sample.isImported"
+            };
+
+            for (int i = 0; i < discoveryMarkers.Length; i++)
+            {
+                if (!importer.Contains(discoveryMarkers[i]))
+                    throw new BuildFailedException("KANINBANKER UNITY-SAMPLES: automatic Unity-owned package discovery/import marker missing: " + discoveryMarkers[i]);
+            }
 
             string bootstrap = File.ReadAllText(BootstrapPath);
             if (!bootstrap.Contains("KaninbankerOfficialUnitySamples.ImportAllNonInteractiveSamples();"))
@@ -37,20 +57,22 @@ namespace Kaninbanker.Editor
                 "com.unity.2d.aseprite",
                 "com.unity.2d.pixel-perfect",
                 "com.unity.2d.psdimporter",
+                "com.unity.2d.sprite",
                 "com.unity.2d.spriteshape",
+                "com.unity.2d.tilemap",
                 "com.unity.2d.tilemap.extras"
             };
 
             for (int i = 0; i < packageMarkers.Length; i++)
             {
                 if (!manifest.Contains(packageMarkers[i]))
-                    throw new BuildFailedException("KANINBANKER UNITY-SAMPLES: official 2D sample source package missing: " + packageMarkers[i]);
+                    throw new BuildFailedException("KANINBANKER UNITY-SAMPLES: official 2D source package missing: " + packageMarkers[i]);
             }
 
             if (!Directory.Exists("Assets/Samples"))
-                Debug.LogWarning("[Kaninbanker][UnitySamples] Assets/Samples does not exist yet. Packages may expose no non-interactive samples in this Unity version, or import may have been skipped; procedural/imported project assets remain the fallback.");
+                Debug.LogWarning("[Kaninbanker][UnitySamples] Assets/Samples does not exist yet. Installed official 2D packages may expose no non-interactive samples in this Unity version; project/imported-art fallbacks remain active.");
             else
-                Debug.Log("[Kaninbanker][UnitySamples] Assets/Samples exists and official package sample content is available to the asset catalog.");
+                Debug.Log("[Kaninbanker][UnitySamples] Assets/Samples exists. Official package sample content can be indexed by the Kaninbanker asset catalog.");
         }
     }
 }
