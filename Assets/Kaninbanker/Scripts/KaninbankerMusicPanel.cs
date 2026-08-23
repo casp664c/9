@@ -3,9 +3,8 @@ using UnityEngine;
 namespace Kaninbanker
 {
     /// <summary>
-    /// Small phone-friendly music panel. It does not extract YouTube audio.
-    /// It opens the official YouTube Music experience so the user can start a track there,
-    /// return to Kaninbanker, and keep game SFX mixed with external music when the OS/account permits it.
+    /// Portrait phone-friendly companion panel for external music. It never extracts YouTube audio;
+    /// it opens the official YouTube Music experience and keeps Kaninbanker's SFX separate.
     /// </summary>
     public sealed class KaninbankerMusicPanel : MonoBehaviour
     {
@@ -23,7 +22,7 @@ namespace Kaninbanker
             if (FindFirstObjectByType<KaninbankerMusicPanel>() != null)
                 return;
 
-            var go = new GameObject("KaninbankerMusicPanel");
+            GameObject go = new GameObject("KaninbankerMusicPanel");
             DontDestroyOnLoad(go);
             go.AddComponent<KaninbankerMusicPanel>();
         }
@@ -51,43 +50,51 @@ namespace Kaninbanker
                 return;
 
             EnsureStyles();
-            Rect safe = Screen.safeArea;
-            float margin = Mathf.Max(14f, safe.width * 0.018f);
-            float top = Screen.height - safe.yMax + margin;
-            float buttonHeight = Mathf.Max(48f, safe.height * 0.065f);
-            float buttonWidth = Mathf.Max(120f, safe.width * 0.16f);
-            float right = safe.xMax - margin;
+            Rect safePixels = Screen.safeArea;
+            Rect safe = new Rect(safePixels.x, Screen.height - safePixels.yMax, safePixels.width, safePixels.height);
+            float margin = Mathf.Max(12f, safe.width * 0.025f);
+            float buttonHeight = Mathf.Max(44f, safe.height * 0.052f);
+            float buttonWidth = Mathf.Clamp(safe.width * 0.22f, 112f, 220f);
 
-            Rect toggleRect = new Rect(right - buttonWidth, top, buttonWidth, buttonHeight);
+            Rect toggleRect = new Rect(safe.xMax - margin - buttonWidth, safe.y + margin, buttonWidth, buttonHeight);
             string mode = externalMusic.ExternalMode ? "YT MUSIK" : "MUSIK";
+            Color oldBackground = GUI.backgroundColor;
+            GUI.backgroundColor = externalMusic.ExternalMode ? new Color(0.92f, 0.18f, 0.20f) : new Color(0.20f, 0.24f, 0.34f);
             if (GUI.Button(toggleRect, mode, buttonStyle))
             {
                 audioSystem.PlayUi();
                 panelOpen = !panelOpen;
             }
+            GUI.backgroundColor = oldBackground;
 
             if (!panelOpen)
                 return;
 
-            float panelWidth = Mathf.Min(safe.width - margin * 2f, Mathf.Max(480f, safe.width * 0.66f));
-            float panelHeight = Mathf.Min(safe.height - margin * 2f, Mathf.Max(300f, safe.height * 0.50f));
-            float panelX = safe.x + (safe.width - panelWidth) * 0.5f;
-            float panelY = Screen.height - safe.yMax + safe.height * 0.20f;
+            // A wide bottom-sheet layout reads naturally on a tall TikTok/Reels-style screen.
+            float panelWidth = safe.width - margin * 2f;
+            float panelHeight = Mathf.Min(safe.height * 0.52f, 620f);
+            float panelX = safe.x + margin;
+            float panelY = safe.yMax - panelHeight - margin;
             Rect panel = new Rect(panelX, panelY, panelWidth, panelHeight);
-            GUI.Box(panel, GUIContent.none);
 
-            float inner = Mathf.Max(18f, panelWidth * 0.035f);
-            float line = Mathf.Max(44f, panelHeight * 0.13f);
-            GUI.Label(new Rect(panelX + inner, panelY + inner * 0.35f, panelWidth - inner * 2f, line), "BAGGRUNDSMUSIK", titleStyle);
+            Color oldColor = GUI.color;
+            GUI.color = new Color(0.025f, 0.032f, 0.055f, 0.98f);
+            GUI.DrawTexture(panel, Texture2D.whiteTexture);
+            GUI.color = oldColor;
+
+            float inner = Mathf.Max(16f, panelWidth * 0.035f);
+            float line = panelHeight * 0.125f;
+            GUI.Label(new Rect(panelX + inner, panelY + inner * 0.30f, panelWidth - inner * 2f, line), "BAGGRUNDSMUSIK", titleStyle);
 
             string current = externalMusic.ExternalMode
-                ? "YouTube Music valgt – intern musik er slået fra, SFX er stadig aktive."
-                : "Intern Kaninbanker-musik er aktiv.";
-            GUI.Label(new Rect(panelX + inner, panelY + line * 0.95f, panelWidth - inner * 2f, line), current, textStyle);
+                ? "YouTube Music valgt. Intern soundtrack er fra, men Kaninbanker-SFX fortsætter."
+                : "Kaninbankers interne arcade-musik er aktiv.";
+            GUI.Label(new Rect(panelX + inner, panelY + line * 0.88f, panelWidth - inner * 2f, line * 0.82f), current, textStyle);
 
-            float half = (panelWidth - inner * 3f) * 0.5f;
-            Rect internalButton = new Rect(panelX + inner, panelY + line * 1.80f, half, line * 0.86f);
-            Rect ytButton = new Rect(panelX + inner * 2f + half, panelY + line * 1.80f, half, line * 0.86f);
+            float gap = inner * 0.55f;
+            float half = (panelWidth - inner * 2f - gap) * 0.5f;
+            Rect internalButton = new Rect(panelX + inner, panelY + line * 1.80f, half, line * 0.80f);
+            Rect ytButton = new Rect(panelX + inner + half + gap, panelY + line * 1.80f, half, line * 0.80f);
 
             if (GUI.Button(internalButton, "INTERN MUSIK", buttonStyle))
             {
@@ -95,15 +102,18 @@ namespace Kaninbanker
                 audioSystem.PlayUi();
             }
 
+            GUI.backgroundColor = new Color(0.92f, 0.18f, 0.20f);
             if (GUI.Button(ytButton, "ÅBN YOUTUBE MUSIC", buttonStyle))
             {
                 audioSystem.PlayUi();
                 externalMusic.OpenYouTubeMusicHome();
             }
+            GUI.backgroundColor = oldBackground;
 
-            GUI.Label(new Rect(panelX + inner, panelY + line * 2.75f, panelWidth - inner * 2f, line * 0.72f), "Søg efter sang, artist eller playlist:", textStyle);
-            Rect searchRect = new Rect(panelX + inner, panelY + line * 3.35f, panelWidth - inner * 2f - half * 0.45f, line * 0.78f);
-            Rect searchButton = new Rect(searchRect.xMax + inner * 0.5f, searchRect.y, half * 0.45f - inner * 0.5f, searchRect.height);
+            GUI.Label(new Rect(panelX + inner, panelY + line * 2.78f, panelWidth - inner * 2f, line * 0.62f), "Søg efter sang, artist eller playlist", textStyle);
+            float searchButtonW = panelWidth * 0.22f;
+            Rect searchRect = new Rect(panelX + inner, panelY + line * 3.35f, panelWidth - inner * 2f - searchButtonW - gap, line * 0.74f);
+            Rect searchButton = new Rect(searchRect.xMax + gap, searchRect.y, searchButtonW, searchRect.height);
 
             externalMusic.SearchQuery = GUI.TextField(searchRect, externalMusic.SearchQuery, 80, fieldStyle);
             if (GUI.Button(searchButton, "SØG", buttonStyle))
@@ -113,11 +123,12 @@ namespace Kaninbanker
             }
 
             GUI.Label(
-                new Rect(panelX + inner, panelY + line * 4.28f, panelWidth - inner * 2f, line * 0.95f),
-                "Start musikken i YouTube Music og gå tilbage til spillet. Om musikken kan fortsætte i baggrunden styres af YouTube Music/Android og din konto.",
+                new Rect(panelX + inner, panelY + line * 4.15f, panelWidth - inner * 2f, line * 1.05f),
+                "Start musikken i YouTube Music og gå tilbage til spillet. Om den fortsætter i baggrunden styres af Android, YouTube Music og din konto.",
                 textStyle);
 
-            Rect closeRect = new Rect(panelX + panelWidth - inner - half * 0.45f, panelY + panelHeight - inner - line * 0.72f, half * 0.45f, line * 0.72f);
+            float closeW = panelWidth * 0.32f;
+            Rect closeRect = new Rect(panelX + panelWidth - inner - closeW, panelY + panelHeight - inner - line * 0.68f, closeW, line * 0.68f);
             if (GUI.Button(closeRect, "LUK", buttonStyle))
             {
                 audioSystem.PlayUi();
@@ -130,31 +141,35 @@ namespace Kaninbanker
             if (titleStyle != null)
                 return;
 
+            int reference = Mathf.Min(Screen.width, Screen.height);
             titleStyle = new GUIStyle(GUI.skin.label)
             {
-                fontSize = Mathf.Max(22, Screen.height / 32),
+                fontSize = Mathf.Clamp(reference / 24, 22, 42),
                 fontStyle = FontStyle.Bold,
                 alignment = TextAnchor.MiddleCenter,
                 wordWrap = true
             };
+            titleStyle.normal.textColor = Color.white;
 
             textStyle = new GUIStyle(GUI.skin.label)
             {
-                fontSize = Mathf.Max(15, Screen.height / 48),
+                fontSize = Mathf.Clamp(reference / 34, 15, 30),
                 alignment = TextAnchor.MiddleLeft,
                 wordWrap = true
             };
+            textStyle.normal.textColor = new Color(0.86f, 0.88f, 0.94f);
 
             buttonStyle = new GUIStyle(GUI.skin.button)
             {
-                fontSize = Mathf.Max(14, Screen.height / 52),
+                fontSize = Mathf.Clamp(reference / 34, 14, 30),
                 fontStyle = FontStyle.Bold,
-                wordWrap = true
+                wordWrap = true,
+                alignment = TextAnchor.MiddleCenter
             };
 
             fieldStyle = new GUIStyle(GUI.skin.textField)
             {
-                fontSize = Mathf.Max(16, Screen.height / 46),
+                fontSize = Mathf.Clamp(reference / 32, 15, 32),
                 alignment = TextAnchor.MiddleLeft
             };
         }
