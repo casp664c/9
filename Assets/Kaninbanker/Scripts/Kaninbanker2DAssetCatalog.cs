@@ -59,7 +59,7 @@ namespace Kaninbanker
             cached = null;
         }
 
-        public Sprite PickRabbit(RabbitKind2D kind, int seed)
+        internal Sprite PickRabbit(RabbitKind2D kind, int seed)
         {
             switch (kind)
             {
