@@ -5,17 +5,18 @@ using UnityEngine;
 namespace Kaninbanker.Editor
 {
     /// <summary>
-    /// Enforces a mobile-friendly TRUE-2D import policy for production art placed under
-    /// Assets/Kaninbanker/Art2D. New PNG/JPG/PSD/PSB assets become sprites automatically
-    /// instead of accidentally entering the project as 3D-oriented textures/material inputs.
+    /// Enforces a mobile-friendly TRUE-2D import policy for Kaninbanker production art.
+    /// New texture art becomes sprites automatically instead of accidentally entering the
+    /// project as generic texture/material input for a 3D workflow.
     /// </summary>
     public sealed class Kaninbanker2DAssetPostprocessor : AssetPostprocessor
     {
-        private const string Root = "Assets/Kaninbanker/Art2D/";
+        private const string AuthoringRoot = "Assets/Kaninbanker/Art2D/";
+        private const string CoreRuntimeRoot = "Assets/Kaninbanker/Resources/KaninbankerArt2D/";
 
         private void OnPreprocessTexture()
         {
-            if (!assetPath.StartsWith(Root))
+            if (!assetPath.StartsWith(AuthoringRoot) && !assetPath.StartsWith(CoreRuntimeRoot))
                 return;
 
             TextureImporter importer = assetImporter as TextureImporter;
