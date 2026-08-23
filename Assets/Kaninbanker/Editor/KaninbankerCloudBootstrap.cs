@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using System.IO;
+using System.Reflection;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
@@ -68,7 +69,16 @@ namespace Kaninbanker.Editor
 
         private static void ConfigureLegacyInput()
         {
-            SerializedObject settings = PlayerSettings.GetSerializedObject();
+            MethodInfo getter = typeof(PlayerSettings).GetMethod(
+                "GetSerializedObject",
+                BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic);
+
+            if (getter == null || getter.Invoke(null, null) is not SerializedObject settings)
+            {
+                Debug.LogWarning("[Kaninbanker] Could not inspect activeInputHandler; leaving Unity default input backend unchanged.");
+                return;
+            }
+
             settings.Update();
             SerializedProperty activeInputHandler = settings.FindProperty("activeInputHandler");
             if (activeInputHandler != null && activeInputHandler.intValue != 0)
