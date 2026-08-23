@@ -29,7 +29,7 @@ namespace Kaninbanker
 
         private void Start()
         {
-            KaninbankerGame game = FindFirstObjectByType<KaninbankerGame>();
+            KaninbankerGame2D game = FindFirstObjectByType<KaninbankerGame2D>();
             if (game == null)
                 return;
 
@@ -70,7 +70,6 @@ namespace Kaninbanker
             if (!panelOpen)
                 return;
 
-            // A wide bottom-sheet layout reads naturally on a tall TikTok/Reels-style screen.
             float panelWidth = safe.width - margin * 2f;
             float panelHeight = Mathf.Min(safe.height * 0.52f, 620f);
             float panelX = safe.x + margin;
