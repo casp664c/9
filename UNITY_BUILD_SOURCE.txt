@@ -1,0 +1,5 @@
+Kaninbanker Unity Build Automation source branch
+branch=build/kaninbanker-unity-cloud
+current_fix=Unity 6 package manifest corrected
+invalid_dependency_removed=com.unity.modules.input
+expected_next_revision=616c94ab5fb2110c14627ec3b1a8b5a2295b48d8
